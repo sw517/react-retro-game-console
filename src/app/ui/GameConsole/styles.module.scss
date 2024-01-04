@@ -25,10 +25,12 @@
 .d-pad {
   appearance: none;
   width: 40%;
+  cursor: default;
 }
 
 .d-pad-image {
   transition: transform ease 0.1s;
+  cursor: pointer;
 }
 
 .d-pad-image--pressed-up {

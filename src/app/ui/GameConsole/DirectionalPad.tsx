@@ -2,14 +2,16 @@
 
 import styles from '@/app/ui/GameConsole/styles.module.scss';
 import DirectionalPadImage from './DirectionalPadImage';
-import { MouseEvent, TouchEvent, useState } from 'react';
+import { MouseEvent, TouchEvent } from 'react';
 import { Direction } from '@/types/direction';
 
-export default function DirectionalPad() {
-  const [directionPressed, setDirectionPressed] = useState<Direction | null>(
-    null
-  );
-
+export default function DirectionalPad({
+  directionPressed,
+  onPress,
+}: {
+  onPress: (arg0: Direction | null) => void;
+  directionPressed: Direction | null;
+}) {
   const calculatePressDirection = (e: TouchEvent<HTMLButtonElement>) => {
     const buttonRect = e.currentTarget.getBoundingClientRect();
     const touchX = e.touches[0].clientX;
@@ -38,26 +40,24 @@ export default function DirectionalPad() {
   };
 
   const handleTouchStart = (e: TouchEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
     const direction = calculatePressDirection(e) || null;
-    setDirectionPressed(direction);
+    onPress(direction);
   };
 
   const handleTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
     const direction = calculatePressDirection(e) || null;
-    setDirectionPressed(direction);
+    onPress(direction);
   };
 
   const handleTouchEnd = (e: TouchEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
-    setDirectionPressed(null);
+    onPress(null);
   };
 
   const handleMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+  };
+
+  const handleContextMenu = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
   };
 
@@ -67,6 +67,7 @@ export default function DirectionalPad() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onContextMenu={handleContextMenu}
       className={styles['d-pad']}
     >
       <DirectionalPadImage directionPressed={directionPressed} />

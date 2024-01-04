@@ -63,7 +63,7 @@ export default function DirectionalPadImage({
       {/* Directional Buttons */}
       <g
         className={clsx([
-          'd-pad-image',
+          styles['d-pad-image'],
           directionPressed &&
             styles[`d-pad-image--pressed-${directionPressed}`],
         ])}
