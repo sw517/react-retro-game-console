@@ -10,9 +10,11 @@
     "test": "vitest"
   },
   "dependencies": {
+    "clsx": "^2.1.0",
     "next": "14.0.4",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "sass": "^1.69.7"
   },
   "devDependencies": {
     "@testing-library/react": "^14.1.2",

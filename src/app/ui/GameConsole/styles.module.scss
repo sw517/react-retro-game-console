@@ -1,0 +1,23 @@
+.directional-pad {
+  transition: transform ease 0.1s;
+}
+
+.directional-pad--pressed-up {
+  transform-origin: top;
+  transform: rotateX(15deg)
+}
+
+.directional-pad--pressed-right {
+  transform-origin: right;
+  transform: rotateY(15deg)
+}
+
+.directional-pad--pressed-bottom {
+  transform-origin: bottom;
+  transform: rotateX(-15deg)
+}
+
+.directional-pad--pressed-left {
+  transform-origin: left;
+  transform: rotateY(-15deg)
+}
