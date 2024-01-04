@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import DirectionalPad from '@/app/ui/GameConsole/DirectionalPad';
+import DirectionalPadImage from '@/app/ui/GameConsole/DirectionalPadImage';
 
 test('Page', () => {
-  render(<DirectionalPad />);
+  render(<DirectionalPadImage />);
   expect(screen.getByTestId('directional-pad')).toBeDefined();
 });

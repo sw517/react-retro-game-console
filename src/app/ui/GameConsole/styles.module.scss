@@ -1,23 +1,82 @@
-.directional-pad {
+.console {
+  aspect-ratio: 307/526;
+  max-height: 100dvh;
+  max-width: 600px;
+  padding: 2rem;
+  background-color: rgb(183, 66, 66);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 999px 250px;
+  border-bottom-left-radius: 999px 250px;
+  border: 5px solid rgba(0, 0, 0, 0.3);
+}
+
+.screen {
+  width: 100%;
+  aspect-ratio: 10/9;
+  background-color: #222;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 700px 100px;
+  border-bottom-left-radius: 700px 100px;
+  padding: 3rem 3rem 5rem;
+}
+
+.d-pad {
+  appearance: none;
+  width: 40%;
+}
+
+.d-pad-image {
   transition: transform ease 0.1s;
 }
 
-.directional-pad--pressed-up {
+.d-pad-image--pressed-up {
   transform-origin: top;
   transform: rotateX(15deg)
 }
 
-.directional-pad--pressed-right {
+.d-pad-image--pressed-right {
   transform-origin: right;
   transform: rotateY(15deg)
 }
 
-.directional-pad--pressed-bottom {
+.d-pad-image--pressed-bottom {
   transform-origin: bottom;
   transform: rotateX(-15deg)
 }
 
-.directional-pad--pressed-left {
+.d-pad-image--pressed-left {
   transform-origin: left;
   transform: rotateY(-15deg)
+}
+
+%button {
+  appearance: none;
+  border: 0;
+  background-color: #333;
+  color: #000;
+  box-shadow: 0 0 0 1px rgb(0, 0, 0), 0px 0 3px 2px rgba(0, 0, 0, 0.6);
+}
+
+.round-button {
+  @extend %button;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.flat-button {
+  @extend %button;
+  width: 4rem;
+  height: 1rem;
+  border-radius: 12px;
+}
+
+.flat-button-label {
+  display: block;
 }
