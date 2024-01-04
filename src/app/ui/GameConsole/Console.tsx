@@ -29,13 +29,31 @@ export default function Console() {
           onPress={setDirectionPressed}
         />
         <div className="flex">
-          <RoundButton letter="B" className="mt-6 mr-6" />
-          <RoundButton letter="A" />
+          <RoundButton
+            pressed={bButtonPressed}
+            onPress={setBButtonPressed}
+            letter="B"
+            className="mt-6 mr-6"
+          />
+          <RoundButton
+            pressed={aButtonPressed}
+            onPress={setAButtonPressed}
+            letter="A"
+          />
         </div>
       </div>
       <div className="flex justify-center mt-10">
-        <FlatButton label="SELECT" />
-        <FlatButton label="START" className="ml-6" />
+        <FlatButton
+          pressed={selectButtonPressed}
+          onPress={setSelectButtonPressed}
+          label="SELECT"
+        />
+        <FlatButton
+          pressed={startButtonPressed}
+          onPress={setStartButtonPressed}
+          label="START"
+          className="ml-6"
+        />
       </div>
     </div>
   );
