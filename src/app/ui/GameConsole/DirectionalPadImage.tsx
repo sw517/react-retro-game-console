@@ -1,21 +1,15 @@
 import styles from './styles.module.scss';
 import clsx from 'clsx';
+import { Direction } from '@/types/direction';
 
 const borderColor = '#000';
 const buttonColor = '#333';
 const arrowColor = '#222';
 
-enum direction {
-  UP = 'up',
-  RIGHT = 'right',
-  DOWN = 'down',
-  LEFT = 'left',
-}
-
 export default function DirectionalPadImage({
   directionPressed,
 }: {
-  directionPressed?: direction;
+  directionPressed?: Direction | null;
 }) {
   return (
     <svg data-testid="directional-pad" viewBox="0 0 100 100" overflow="visible">
@@ -69,8 +63,9 @@ export default function DirectionalPadImage({
       {/* Directional Buttons */}
       <g
         className={clsx([
-          'd-pad',
-          directionPressed && styles[`d-pad--pressed-${directionPressed}`],
+          'd-pad-image',
+          directionPressed &&
+            styles[`d-pad-image--pressed-${directionPressed}`],
         ])}
       >
         <g filter='url("#shadow")'>
