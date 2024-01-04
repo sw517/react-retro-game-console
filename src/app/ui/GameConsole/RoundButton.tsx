@@ -29,6 +29,7 @@ export default function Button({
         styles['round-button'],
         pressed && styles['round-button--pressed'],
       ])}
+      data-testid="round-button"
     >
       {letter}
     </button>

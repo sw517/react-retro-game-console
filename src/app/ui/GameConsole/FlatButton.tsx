@@ -29,9 +29,10 @@ export default function FlatButton({
           styles['flat-button'],
           pressed && styles['flat-button--pressed'],
         ])}
+        data-testid="flat-button"
         aria-label={label}
       />
-      <span className={styles['flat-button-label']} aria-hidden>
+      <span className={`${styles['flat-button-label']} text-xs`} aria-hidden>
         {label}
       </span>
     </div>

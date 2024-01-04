@@ -2,7 +2,7 @@
   aspect-ratio: 307/526;
   max-height: 100dvh;
   max-width: 600px;
-  padding: 2rem;
+  padding: 1.5rem;
   background-color: rgb(183, 66, 66);
   border-top-left-radius: 18px;
   border-top-right-radius: 18px;
@@ -13,13 +13,16 @@
 
 .screen {
   width: 100%;
-  aspect-ratio: 10/9;
+  aspect-ratio: 10/8;
   background-color: #222;
   border-top-left-radius: 18px;
   border-top-right-radius: 18px;
   border-bottom-right-radius: 700px 100px;
   border-bottom-left-radius: 700px 100px;
-  padding: 3rem 3rem 5rem;
+  padding-top: 2rem;
+  padding-right: 2.5rem;
+  padding-bottom: 3rem;
+  padding-left: 2.5rem;
 }
 
 .d-pad {
@@ -68,8 +71,8 @@
 
 .round-button {
   @extend %button;
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -83,8 +86,8 @@
 
 .flat-button {
   @extend %button;
-  width: 4rem;
-  height: 1rem;
+  width: 3rem;
+  height: 0.75rem;
   border-radius: 12px;
 
   &--pressed {

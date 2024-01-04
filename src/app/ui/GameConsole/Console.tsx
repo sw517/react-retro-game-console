@@ -5,6 +5,7 @@ import RoundButton from './RoundButton';
 import FlatButton from './FlatButton';
 import DirectionalPad from './DirectionalPad';
 import Screen from './Screen';
+import Trademark from './Trademark';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
 
@@ -21,8 +22,11 @@ export default function Console() {
   return (
     <div className={styles.console}>
       <Screen>
-        <canvas />
+        <canvas className="w-full h-full" />
       </Screen>
+      <div className="mt-4 min-[400px]:mt-6 text-center">
+        <Trademark />
+      </div>
       <div className="flex items-center justify-between mt-5">
         <DirectionalPad
           directionPressed={directionPressed}
