@@ -22,35 +22,45 @@ export default function Console() {
 
   const handleDirectionPresesed = (direction: Direction | null) => {
     if (direction) {
-      window.navigator.vibrate(50);
+      try {
+        window.navigator.vibrate(50);
+      } catch (error) {}
     }
     setDirectionPressed(direction);
   };
 
   const handleAButtonPressed = (pressed: boolean) => {
     if (pressed) {
-      window.navigator.vibrate(100);
+      try {
+        window.navigator.vibrate(100);
+      } catch (error) {}
     }
     setAButtonPressed(pressed);
   };
 
   const handleBButtonPressed = (pressed: boolean) => {
     if (pressed) {
-      window.navigator.vibrate(100);
+      try {
+        window.navigator.vibrate(100);
+      } catch (error) {}
     }
     setBButtonPressed(pressed);
   };
 
   const handleSelectButtonPressed = (pressed: boolean) => {
     if (pressed) {
-      window.navigator.vibrate(100);
+      try {
+        window.navigator.vibrate(100);
+      } catch (error) {}
     }
     setSelectButtonPressed(pressed);
   };
 
   const handleStartButtonPressed = (pressed: boolean) => {
     if (pressed) {
-      window.navigator.vibrate(100);
+      try {
+        window.navigator.vibrate(100);
+      } catch (error) {}
     }
     setStartButtonPressed(pressed);
   };
