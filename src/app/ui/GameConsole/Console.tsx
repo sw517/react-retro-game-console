@@ -20,11 +20,39 @@ export default function Console() {
     useState<boolean>(false);
   const [startButtonPressed, setStartButtonPressed] = useState<boolean>(false);
 
+  const handleDirectionPresesed = (direction: Direction | null) => {
+    if (direction) {
+      window.navigator.vibrate(50);
+    }
+    setDirectionPressed(direction);
+  };
+
   const handleAButtonPressed = (pressed: boolean) => {
     if (pressed) {
-      window.navigator.vibrate(200);
+      window.navigator.vibrate(100);
     }
     setAButtonPressed(pressed);
+  };
+
+  const handleBButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      window.navigator.vibrate(100);
+    }
+    setBButtonPressed(pressed);
+  };
+
+  const handleSelectButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      window.navigator.vibrate(100);
+    }
+    setSelectButtonPressed(pressed);
+  };
+
+  const handleStartButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      window.navigator.vibrate(100);
+    }
+    setStartButtonPressed(pressed);
   };
 
   return (
@@ -38,12 +66,12 @@ export default function Console() {
       <div className="flex items-center justify-between mt-5">
         <DirectionalPad
           directionPressed={directionPressed}
-          onPress={setDirectionPressed}
+          onPress={handleDirectionPresesed}
         />
         <div className="flex">
           <RoundButton
             pressed={bButtonPressed}
-            onPress={setBButtonPressed}
+            onPress={handleBButtonPressed}
             letter="B"
             className="mt-6 mr-6"
           />
@@ -57,12 +85,12 @@ export default function Console() {
       <div className="flex justify-center mt-10">
         <FlatButton
           pressed={selectButtonPressed}
-          onPress={setSelectButtonPressed}
+          onPress={handleSelectButtonPressed}
           label="SELECT"
         />
         <FlatButton
           pressed={startButtonPressed}
-          onPress={setStartButtonPressed}
+          onPress={handleStartButtonPressed}
           label="START"
           className="ml-6"
         />
