@@ -7,7 +7,7 @@ import DirectionalPad from './DirectionalPad';
 import Screen from './Screen';
 import Trademark from './Trademark';
 import Breakout from '@/app/ui/games/Breakout';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Direction } from '@/types/direction';
 
 export default function Console() {
@@ -58,7 +58,10 @@ export default function Console() {
   return (
     <div className={styles.console}>
       <Screen>
-        <Breakout />
+        <Breakout
+          directionPressed={directionPressed}
+          startPressed={startButtonPressed}
+        />
       </Screen>
       <div className="mt-4 min-[400px]:mt-6 text-center">
         <Trademark />

@@ -1,5 +1,6 @@
 .console {
   aspect-ratio: 307/526;
+  min-width: 260px;
   max-height: 100dvh;
   max-width: 600px;
   padding: 1.5rem;
@@ -19,11 +20,18 @@
   border-top-right-radius: 18px;
   border-bottom-right-radius: 700px 100px;
   border-bottom-left-radius: 700px 100px;
-  padding-top: 2rem;
-  padding-right: 2.5rem;
-  padding-bottom: 3rem;
-  padding-left: 2.5rem;
+  padding-top: 1.5rem;
+  padding-right: 2rem;
+  padding-bottom: 2.5rem;
+  padding-left: 2rem;
   box-shadow: 0 0 0 2px #000;
+
+  @media screen and (min-width: 400px) {
+    padding-top: 2rem;
+    padding-right: 2.5rem;
+    padding-bottom: 3rem;
+    padding-left: 2.5rem;
+  }
 }
 
 .d-pad {
