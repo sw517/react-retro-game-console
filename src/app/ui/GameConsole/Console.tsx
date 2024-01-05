@@ -20,10 +20,17 @@ export default function Console() {
     useState<boolean>(false);
   const [startButtonPressed, setStartButtonPressed] = useState<boolean>(false);
 
+  const handleAButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      window.navigator.vibrate(200);
+    }
+    setAButtonPressed(pressed);
+  };
+
   return (
     <div className={styles.console}>
       <Screen>
-        <canvas className="w-full h-full" />
+        <Breakout />
       </Screen>
       <div className="mt-4 min-[400px]:mt-6 text-center">
         <Trademark />
@@ -42,7 +49,7 @@ export default function Console() {
           />
           <RoundButton
             pressed={aButtonPressed}
-            onPress={setAButtonPressed}
+            onPress={handleAButtonPressed}
             letter="A"
           />
         </div>
