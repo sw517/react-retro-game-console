@@ -12,7 +12,7 @@ const initialCanvas: Canvas = {
   background: '#333333',
 };
 const initialBall: Ball = { xPos: 0, yPos: 0, dy: 0, dx: 0, diameter: 4 };
-const initialPaddle: Paddle = { xPos: 0, width: 40, height: 6 };
+const initialPaddle: Paddle = { xPos: 0, width: 50, height: 6 };
 const initialBricks: Bricks = {
   columns: 5,
   rows: 3,
@@ -46,44 +46,15 @@ export default function Breakout({
   const ball = useRef<Ball>(initialBall);
   const paddle = useRef<Paddle>(initialPaddle);
   const bricks = useRef<Bricks>(initialBricks);
-
-  const getParentContainerWidth = () => {
-    if (!canvasElement.current?.parentElement) return 0;
-
-    const styles = window.getComputedStyle(canvasElement.current.parentElement);
-
-    const paddingLeft = Number(
-      styles.getPropertyValue('padding-left').replace('px', '')
-    );
-    const paddingRight = Number(
-      styles.getPropertyValue('padding-right').replace('px', '')
-    );
-    const width = Number(styles.getPropertyValue('width').replace('px', ''));
-    return width - paddingLeft - paddingRight;
-  };
-
-  const getParentContainerHeight = () => {
-    if (!canvasElement.current?.parentElement) return 0;
-
-    const styles = window.getComputedStyle(canvasElement.current.parentElement);
-
-    const paddingTop = Number(
-      styles.getPropertyValue('padding-top').replace('px', '')
-    );
-    const paddingBottom = Number(
-      styles.getPropertyValue('padding-bottom').replace('px', '')
-    );
-    const height = Number(styles.getPropertyValue('height').replace('px', ''));
-    return height - paddingTop - paddingBottom;
-  };
+  const score = useRef(0);
 
   const initGameProperties = useCallback(() => {
     ctx.current = canvasElement.current?.getContext('2d');
 
     if (!ctx.current) return;
 
-    canvas.current.width = getParentContainerWidth();
-    canvas.current.height = getParentContainerHeight();
+    canvas.current.width = ctx.current.canvas.clientWidth;
+    canvas.current.height = ctx.current.canvas.clientHeight;
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
     ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
@@ -91,7 +62,8 @@ export default function Breakout({
 
     // Init ball
     ball.current.xPos = canvas.current.width / 2;
-    ball.current.yPos = canvas.current.height / 2;
+    ball.current.yPos =
+      canvas.current.height - paddle.current.height - ball.current.diameter - 2;
 
     // Init paddle
     paddle.current.xPos = (canvas.current.width - paddle.current.width) / 2;
@@ -111,16 +83,26 @@ export default function Breakout({
     }
   }, [paddle, ball, ctx, canvas]);
 
+  const changeBallSpeed = (speed: number) => {
+    ball.current.dx = ball.current.dx < 0 ? -speed : speed;
+    ball.current.dy = ball.current.dy < 0 ? -speed : speed;
+  };
+
   const draw = useCallback(() => {
     if (!ctx.current) return;
 
-    const getBallSpeed = () => {
-      return Math.abs(ball.current.dx);
-    };
+    const movePaddle = () => {
+      console.log(directionPressed);
 
-    const changeBallSpeed = (speed: number) => {
-      ball.current.dx = ball.current.dx < 0 ? -speed : speed;
-      ball.current.dy = ball.current.dy < 0 ? -speed : speed;
+      if (directionPressed === Direction.RIGHT) {
+        if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
+          paddle.current.xPos += 3;
+        }
+      } else if (directionPressed === Direction.LEFT) {
+        if (paddle.current.xPos >= 0) {
+          paddle.current.xPos -= 3;
+        }
+      }
     };
 
     // Check if ball hits left or right side of canvas.
@@ -173,18 +155,6 @@ export default function Breakout({
         canvas.current.height - ball.current.diameter
       ) {
         // gameOver();
-      }
-    };
-
-    const movePaddle = () => {
-      if (directionPressed === Direction.RIGHT) {
-        if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
-          paddle.current.xPos += 7;
-        }
-      } else if (directionPressed === Direction.LEFT) {
-        if (paddle.current.xPos >= 0) {
-          paddle.current.xPos -= 7;
-        }
       }
     };
 
@@ -251,12 +221,46 @@ export default function Breakout({
       }
     };
 
+    const checkEndGame = () => {
+      if (
+        score.current ===
+        bricks.current.columns * bricks.current.rows * bricks.current.points
+      ) {
+        // gameOver(true);
+      }
+    };
+
+    const detectBrickCollision = () => {
+      for (let c = 0; c < bricks.current.columns; c += 1) {
+        for (let r = 0; r < bricks.current.rows; r += 1) {
+          const brick = bricks.current.instances[c][r];
+          if (brick.status === 1) {
+            if (
+              ball.current.xPos > brick.x - ball.current.diameter &&
+              ball.current.xPos <
+                brick.x + bricks.current.width + ball.current.diameter &&
+              ball.current.yPos > brick.y - ball.current.diameter &&
+              ball.current.yPos <
+                brick.y + bricks.current.height + ball.current.diameter
+            ) {
+              // const direction = getBrickCollisionDirection(brick);
+              ball.current.dy = -ball.current.dy;
+              brick.status = 0;
+              score.current = score.current + bricks.current.points;
+              // paddle.current = width -= 1;
+              checkEndGame();
+            }
+          }
+        }
+      }
+    };
+
     ctx.current.clearRect(0, 0, canvas.current.width, canvas.current.height);
     movePaddle();
     drawBall();
     drawPaddle();
     drawBricks();
-    // detectBrickCollision();
+    detectBrickCollision();
     // drawScore();
     // if (instructionsVisible) {
     //   drawIntructions();
@@ -267,7 +271,7 @@ export default function Breakout({
     // if (gameEnded) {
     //   drawGameOver();
     // }
-  }, [ctx, paddle, ball, directionPressed, canvas]);
+  }, [paddle, ball, canvas, ctx, directionPressed]);
 
   useEffect(() => {
     // dpr.current = window.devicePixelRatio || 1;
@@ -280,10 +284,16 @@ export default function Breakout({
 
   useEffect(() => {
     initGameProperties();
+  }, [initGameProperties]);
+
+  useEffect(() => {
     draw();
 
-    animationInterval.current = window.setInterval(draw, 1000);
-  }, []);
+    changeBallSpeed(1);
+    animationInterval.current = window.setInterval(draw, 10);
+
+    return () => window.clearInterval(animationInterval.current);
+  }, [draw]);
 
   return (
     <canvas
