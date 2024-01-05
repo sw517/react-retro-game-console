@@ -6,6 +6,7 @@ import FlatButton from './FlatButton';
 import DirectionalPad from './DirectionalPad';
 import Screen from './Screen';
 import Trademark from './Trademark';
+import Breakout from '@/app/ui/games/Breakout';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
 
