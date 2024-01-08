@@ -48,19 +48,13 @@ export default function Breakout({
   const paddle = useRef<Paddle>(initialPaddle);
   const bricks = useRef<Bricks>(initialBricks);
   const score = useRef(0);
-  const gameStarted = useRef(false);
+  const gameActive = useRef(false);
+  const gamePaused = useRef(false);
   const gameOver = useRef(false);
   const gameWon = useRef(false);
   const instructionsVisible = useRef(true);
   const countdownVisible = useRef(false);
   const countdown = useRef(3);
-
-  const clearAnimationInterval = () => {
-    if (animationInterval.current) {
-      window.clearInterval(animationInterval.current);
-      animationInterval.current = null;
-    }
-  };
 
   const initGameProperties = useCallback(() => {
     ctx.current = canvasElement.current?.getContext('2d');
@@ -104,11 +98,8 @@ export default function Breakout({
   const draw = useCallback(() => {
     if (!ctx.current) return;
 
-    console.log('drawing', directionPressed);
-
     const movePaddle = () => {
-      console.log(directionPressed);
-      if (!gameStarted.current) return;
+      if (!gameActive.current || gamePaused.current) return;
 
       if (directionPressed === Direction.RIGHT) {
         if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
@@ -188,8 +179,14 @@ export default function Breakout({
       ctx.current.fillStyle = canvas.current.color;
       ctx.current.fill();
       ctx.current.closePath();
-      ball.current.xPos += ball.current.dx;
-      ball.current.yPos += ball.current.dy;
+      const newXPos = gamePaused.current
+        ? ball.current.xPos
+        : ball.current.xPos + ball.current.dx;
+      const newYPos = gamePaused.current
+        ? ball.current.yPos
+        : ball.current.yPos + ball.current.dy;
+      ball.current.xPos = newXPos;
+      ball.current.yPos = newYPos;
       checkBoundaries();
     };
 
@@ -238,7 +235,7 @@ export default function Breakout({
     };
 
     const setGameOver = (won = false) => {
-      gameStarted.current = false;
+      gameActive.current = false;
       gameOver.current = true;
       if (won) {
         gameWon.current = true;
@@ -373,7 +370,9 @@ export default function Breakout({
 
   useEffect(() => {
     if (startPressed) {
-      if (gameStarted.current) return;
+      if (gameActive.current) {
+        gamePaused.current = !gamePaused.current;
+      }
 
       if (instructionsVisible.current) {
         instructionsVisible.current = false;
@@ -386,7 +385,7 @@ export default function Breakout({
             window.clearInterval(countdownInterval);
             countdownVisible.current = false;
 
-            gameStarted.current = true;
+            gameActive.current = true;
             changeBallSpeed(1);
           }
         }, 1000);
@@ -395,7 +394,7 @@ export default function Breakout({
         countdown.current = 3;
         instructionsVisible.current = true;
         countdownVisible.current = false;
-        gameStarted.current = false;
+        gameActive.current = false;
         gameOver.current = false;
         gameWon.current = false;
         score.current = 0;
