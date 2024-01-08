@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Direction } from '@/types/direction';
 import styles from './styles.module.scss';
 import { type Paddle, Ball, Bricks, Canvas } from '@/types/breakout';
+import CanvasComponent from './Canvas';
 
 const initialCanvas: Canvas = {
   width: 0,
@@ -11,16 +12,16 @@ const initialCanvas: Canvas = {
   color: '#ccc',
   background: '#333333',
 };
-const initialBall: Ball = { xPos: 0, yPos: 0, dy: 0, dx: 0, diameter: 4 };
-const initialPaddle: Paddle = { xPos: 0, width: 50, height: 6 };
+const initialBall: Ball = { xPos: 0, yPos: 0, dy: 0, dx: 0, diameter: 3 };
+const initialPaddle: Paddle = { xPos: 0, width: 50, height: 5 };
 const initialBricks: Bricks = {
   columns: 5,
   rows: 3,
   width: 20,
-  height: 8,
+  height: 5,
   padding: 8,
   xOffset: 12,
-  yOffset: 12,
+  yOffset: 20,
   points: 10,
   instances: [],
 };
@@ -33,7 +34,7 @@ export default function Breakout({
   startPressed: boolean;
 }) {
   const dpr = useRef(1);
-  const animationInterval = useRef<number | undefined>();
+  const animationInterval = useRef<number | null>(null);
   const canvas = useRef<Canvas>(initialCanvas);
   const [canvasPixelWidth, setCanvasPixelWidth] = useState<number>(
     canvas.current.width * dpr.current
@@ -47,6 +48,19 @@ export default function Breakout({
   const paddle = useRef<Paddle>(initialPaddle);
   const bricks = useRef<Bricks>(initialBricks);
   const score = useRef(0);
+  const gameStarted = useRef(false);
+  const gameOver = useRef(false);
+  const gameWon = useRef(false);
+  const instructionsVisible = useRef(true);
+  const countdownVisible = useRef(false);
+  const countdown = useRef(3);
+
+  const clearAnimationInterval = () => {
+    if (animationInterval.current) {
+      window.clearInterval(animationInterval.current);
+      animationInterval.current = null;
+    }
+  };
 
   const initGameProperties = useCallback(() => {
     ctx.current = canvasElement.current?.getContext('2d');
@@ -58,7 +72,6 @@ export default function Breakout({
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
     ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
-    console.log(ctx.current);
 
     // Init ball
     ball.current.xPos = canvas.current.width / 2;
@@ -91,8 +104,11 @@ export default function Breakout({
   const draw = useCallback(() => {
     if (!ctx.current) return;
 
+    console.log('drawing', directionPressed);
+
     const movePaddle = () => {
       console.log(directionPressed);
+      if (!gameStarted.current) return;
 
       if (directionPressed === Direction.RIGHT) {
         if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
@@ -154,7 +170,7 @@ export default function Breakout({
         ball.current.yPos >
         canvas.current.height - ball.current.diameter
       ) {
-        // gameOver();
+        setGameOver();
       }
     };
 
@@ -169,7 +185,7 @@ export default function Breakout({
         0,
         Math.PI * 2
       );
-      ctx.current.fillStyle = 'yellow';
+      ctx.current.fillStyle = canvas.current.color;
       ctx.current.fill();
       ctx.current.closePath();
       ball.current.xPos += ball.current.dx;
@@ -187,7 +203,7 @@ export default function Breakout({
         paddle.current.width,
         paddle.current.height
       );
-      ctx.current.fillStyle = 'pink';
+      ctx.current.fillStyle = canvas.current.color;
       ctx.current.fill();
       ctx.current.closePath();
     };
@@ -221,12 +237,22 @@ export default function Breakout({
       }
     };
 
+    const setGameOver = (won = false) => {
+      gameStarted.current = false;
+      gameOver.current = true;
+      if (won) {
+        gameWon.current = true;
+      }
+
+      changeBallSpeed(0);
+    };
+
     const checkEndGame = () => {
       if (
         score.current ===
         bricks.current.columns * bricks.current.rows * bricks.current.points
       ) {
-        // gameOver(true);
+        setGameOver(true);
       }
     };
 
@@ -255,22 +281,81 @@ export default function Breakout({
       }
     };
 
+    const drawScore = () => {
+      if (!ctx.current) return;
+
+      ctx.current.font = '10px Courier';
+      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillText(`Score: ${score.current}`, 5, 12);
+    };
+
+    const drawIntructions = () => {
+      if (!ctx.current) return;
+
+      ctx.current.beginPath();
+      ctx.current.rect(0, 0, canvas.current.width, 56);
+      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fill();
+      ctx.current.lineWidth = 3;
+      ctx.current.strokeStyle = canvas.current.background;
+      ctx.current.stroke();
+      ctx.current.closePath();
+      ctx.current.font = '10px Courier';
+      ctx.current.fillStyle = canvas.current.background;
+      ctx.current.fillText('Press Start to begin', 8, 20);
+      ctx.current.fillText('Left/Right arrows to move', 8, 40);
+    };
+
+    const drawCountdown = () => {
+      if (!ctx.current) return;
+
+      ctx.current.font = '18px Courier';
+      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillText(
+        String(countdown.current),
+        canvas.current.width / 2 - 5,
+        canvas.current.height / 2 + 30
+      );
+    };
+
+    const drawGameOver = () => {
+      if (!ctx.current) return;
+
+      const gameText = gameWon.current ? 'WINNER!' : 'GAME OVER';
+      const textOffset = gameWon.current ? 40 : 50;
+      ctx.current.font = '18px Courier';
+      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillText(
+        gameText,
+        canvas.current.width / 2 - textOffset,
+        canvas.current.height / 2 + 10
+      );
+
+      ctx.current.font = '10px Courier';
+      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillText(
+        '(Press Start to restart)',
+        canvas.current.width / 2 - 72,
+        canvas.current.height / 2 + 30
+      );
+    };
+
     ctx.current.clearRect(0, 0, canvas.current.width, canvas.current.height);
     movePaddle();
     drawBall();
     drawPaddle();
     drawBricks();
     detectBrickCollision();
-    // drawScore();
-    // if (instructionsVisible) {
-    //   drawIntructions();
-    // }
-    // if (countdown.isVisible) {
-    //   drawCountdown();
-    // }
-    // if (gameEnded) {
-    //   drawGameOver();
-    // }
+    drawScore();
+    if (instructionsVisible.current) {
+      drawIntructions();
+    }
+    if (countdownVisible.current) {
+      drawCountdown();
+    }
+    if (gameOver.current) {
+      drawGameOver();
+    }
   }, [paddle, ball, canvas, ctx, directionPressed]);
 
   useEffect(() => {
@@ -287,20 +372,48 @@ export default function Breakout({
   }, [initGameProperties]);
 
   useEffect(() => {
-    draw();
+    if (startPressed) {
+      if (gameStarted.current) return;
 
-    changeBallSpeed(1);
-    animationInterval.current = window.setInterval(draw, 10);
+      if (instructionsVisible.current) {
+        instructionsVisible.current = false;
 
-    return () => window.clearInterval(animationInterval.current);
-  }, [draw]);
+        countdownVisible.current = true;
+        const countdownInterval = window.setInterval(() => {
+          countdown.current = countdown.current - 1;
+
+          if (countdown.current <= 0) {
+            window.clearInterval(countdownInterval);
+            countdownVisible.current = false;
+
+            gameStarted.current = true;
+            changeBallSpeed(1);
+          }
+        }, 1000);
+      } else if (gameOver.current) {
+        changeBallSpeed(0);
+        countdown.current = 3;
+        instructionsVisible.current = true;
+        countdownVisible.current = false;
+        gameStarted.current = false;
+        gameOver.current = false;
+        gameWon.current = false;
+        score.current = 0;
+        ball.current = initialBall;
+        paddle.current = initialPaddle;
+        bricks.current = initialBricks;
+        initGameProperties();
+      }
+    }
+  }, [initGameProperties, startPressed]);
 
   return (
-    <canvas
+    <CanvasComponent
       ref={canvasElement}
       className={styles.canvas}
       width={canvasPixelWidth}
       height={canvasPixelHeight}
+      draw={draw}
     />
   );
 }
