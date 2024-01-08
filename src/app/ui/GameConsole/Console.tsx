@@ -10,8 +10,7 @@ import Breakout from '@/app/ui/games/Breakout';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
 
-const buttonVibrateLength = 20;
-const directionPadVibrateLength = 10;
+const buttonVibrateLength = 10;
 
 export default function Console() {
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
@@ -26,7 +25,7 @@ export default function Console() {
   const handleDirectionPresesed = (direction: Direction | null) => {
     if (direction && directionPressed !== direction) {
       try {
-        window.navigator.vibrate(directionPadVibrateLength);
+        window.navigator.vibrate(buttonVibrateLength);
       } catch (error) {}
     }
     setDirectionPressed(direction);
