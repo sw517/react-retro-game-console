@@ -13,6 +13,7 @@ import { Direction } from '@/types/direction';
 const buttonVibrateLength = 10;
 
 export default function Console() {
+  const [power, setPower] = useState<0 | 1>(0);
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
     null
   );
@@ -63,17 +64,24 @@ export default function Console() {
       try {
         window.navigator.vibrate(buttonVibrateLength);
       } catch (error) {}
+
+      if (!power) {
+        setPower(1);
+        return;
+      }
     }
     setStartButtonPressed(pressed);
   };
 
   return (
     <div className={styles.console}>
-      <Screen>
-        <Breakout
-          directionPressed={directionPressed}
-          startPressed={startButtonPressed}
-        />
+      <Screen power={power}>
+        {!!power && (
+          <Breakout
+            directionPressed={directionPressed}
+            startPressed={startButtonPressed}
+          />
+        )}
       </Screen>
       <div className="mt-4 min-[400px]:mt-6 text-center">
         <Trademark />
@@ -82,6 +90,7 @@ export default function Console() {
         <DirectionalPad
           directionPressed={directionPressed}
           onPress={handleDirectionPresesed}
+          dataTestId="directional-pad-button"
         />
         <div className="flex">
           <RoundButton
@@ -89,11 +98,13 @@ export default function Console() {
             onPress={handleBButtonPressed}
             letter="B"
             className="mt-6 mr-6"
+            dataTestId="b-button"
           />
           <RoundButton
             pressed={aButtonPressed}
             onPress={handleAButtonPressed}
             letter="A"
+            dataTestId="a-button"
           />
         </div>
       </div>
@@ -102,12 +113,14 @@ export default function Console() {
           pressed={selectButtonPressed}
           onPress={handleSelectButtonPressed}
           label="SELECT"
+          dataTestId="select-button"
         />
         <FlatButton
           pressed={startButtonPressed}
           onPress={handleStartButtonPressed}
           label="START"
           className="ml-6"
+          dataTestId="start-button"
         />
       </div>
     </div>

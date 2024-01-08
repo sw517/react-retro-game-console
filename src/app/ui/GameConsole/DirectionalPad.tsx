@@ -4,18 +4,30 @@ import styles from '@/app/ui/GameConsole/styles.module.scss';
 import DirectionalPadImage from './DirectionalPadImage';
 import { MouseEvent, TouchEvent } from 'react';
 import { Direction } from '@/types/direction';
+import isTouchEvent from '@/app/helpers/is-touch-event';
 
 export default function DirectionalPad({
   directionPressed,
   onPress,
+  dataTestId,
 }: {
   onPress: (arg0: Direction | null) => void;
   directionPressed: Direction | null;
+  dataTestId?: string;
 }) {
-  const calculatePressDirection = (e: TouchEvent<HTMLButtonElement>) => {
+  const calculatePressDirection = (
+    e: TouchEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
+  ) => {
     const buttonRect = e.currentTarget.getBoundingClientRect();
-    const touchX = e.touches[0].clientX;
-    const touchY = e.touches[0].clientY;
+    let touchX, touchY: number;
+
+    if (isTouchEvent(e)) {
+      touchX = e.touches[0].clientX;
+      touchY = e.touches[0].clientY;
+    } else {
+      touchX = e.clientX;
+      touchY = e.clientY;
+    }
 
     const relativeX = touchX - buttonRect.left;
     const relativeY = touchY - buttonRect.top;
@@ -58,6 +70,21 @@ export default function DirectionalPad({
 
   const handleMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    const direction = calculatePressDirection(e) || null;
+    onPress(direction);
+  };
+
+  const handleMouseUp = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    onPress(null);
+  };
+
+  const handleMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (e.buttons) {
+      const direction = calculatePressDirection(e) || null;
+      onPress(direction);
+    }
   };
 
   const handleContextMenu = (e: MouseEvent<HTMLButtonElement>) => {
@@ -67,11 +94,14 @@ export default function DirectionalPad({
   return (
     <button
       onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onContextMenu={handleContextMenu}
       className={styles['d-pad']}
+      data-testid={dataTestId}
     >
       <DirectionalPadImage directionPressed={directionPressed} />
     </button>

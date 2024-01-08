@@ -9,6 +9,11 @@ test('Page', () => {
         fontFamily: 'mocked',
       },
     }),
+    Grandstander: () => ({
+      style: {
+        fontFamily: 'mocked',
+      },
+    }),
   }));
 
   render(<Page />);

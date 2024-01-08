@@ -7,8 +7,8 @@ import { type Paddle, Ball, Bricks, Canvas } from '@/types/breakout';
 import CanvasComponent from './Canvas';
 
 const initialCanvas: Canvas = {
-  width: 0,
-  height: 0,
+  width: 167,
+  height: 121,
   color: '#ccc',
   background: '#333333',
 };
@@ -64,7 +64,7 @@ export default function Breakout({
     canvas.current.height = ctx.current.canvas.clientHeight;
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
-    ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
+    // ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
 
     // Init ball
     ball.current.xPos = canvas.current.width / 2;
@@ -280,14 +280,19 @@ export default function Breakout({
     const drawScore = () => {
       if (!ctx.current) return;
 
+      ctx.current.translate(0.5, 0.5);
+
       ctx.current.font = '10px Courier';
       ctx.current.fillStyle = canvas.current.color;
       ctx.current.fillText(`Score: ${score.current}`, 5, 12);
+
+      ctx.current.translate(-0.5, -0.5);
     };
 
     const drawIntructions = () => {
       if (!ctx.current) return;
 
+      ctx.current.translate(0.5, 0.5);
       ctx.current.beginPath();
       ctx.current.rect(0, 0, canvas.current.width, 56);
       ctx.current.fillStyle = canvas.current.color;
@@ -300,6 +305,7 @@ export default function Breakout({
       ctx.current.fillStyle = canvas.current.background;
       ctx.current.fillText('Press Start to begin', 8, 20);
       ctx.current.fillText('Left/Right arrows to move', 8, 40);
+      ctx.current.translate(-0.5, -0.5);
     };
 
     const drawCountdown = () => {
