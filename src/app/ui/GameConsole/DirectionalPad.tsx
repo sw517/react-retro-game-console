@@ -40,16 +40,19 @@ export default function DirectionalPad({
   };
 
   const handleTouchStart = (e: TouchEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const direction = calculatePressDirection(e) || null;
     onPress(direction);
   };
 
   const handleTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const direction = calculatePressDirection(e) || null;
     onPress(direction);
   };
 
   const handleTouchEnd = (e: TouchEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     onPress(null);
   };
 

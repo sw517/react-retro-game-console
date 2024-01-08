@@ -10,6 +10,8 @@ import Breakout from '@/app/ui/games/Breakout';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
 
+const buttonVibrateLength = 10;
+
 export default function Console() {
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
     null
@@ -20,17 +22,58 @@ export default function Console() {
     useState<boolean>(false);
   const [startButtonPressed, setStartButtonPressed] = useState<boolean>(false);
 
+  const handleDirectionPresesed = (direction: Direction | null) => {
+    if (direction && directionPressed !== direction) {
+      try {
+        window.navigator.vibrate(buttonVibrateLength);
+      } catch (error) {}
+    }
+    setDirectionPressed(direction);
+  };
+
   const handleAButtonPressed = (pressed: boolean) => {
     if (pressed) {
-      window.navigator.vibrate(200);
+      try {
+        window.navigator.vibrate(buttonVibrateLength);
+      } catch (error) {}
     }
     setAButtonPressed(pressed);
+  };
+
+  const handleBButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      try {
+        window.navigator.vibrate(buttonVibrateLength);
+      } catch (error) {}
+    }
+    setBButtonPressed(pressed);
+  };
+
+  const handleSelectButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      try {
+        window.navigator.vibrate(buttonVibrateLength);
+      } catch (error) {}
+    }
+    setSelectButtonPressed(pressed);
+  };
+
+  const handleStartButtonPressed = (pressed: boolean) => {
+    if (pressed) {
+      try {
+        window.navigator.vibrate(buttonVibrateLength);
+      } catch (error) {}
+    }
+    setStartButtonPressed(pressed);
   };
 
   return (
     <div className={styles.console}>
       <Screen>
-        <Breakout />
+        <Breakout
+          directionPressed={directionPressed}
+          startPressed={startButtonPressed}
+        />
       </Screen>
       <div className="mt-4 min-[400px]:mt-6 text-center">
         <Trademark />
@@ -38,12 +81,12 @@ export default function Console() {
       <div className="flex items-center justify-between mt-5">
         <DirectionalPad
           directionPressed={directionPressed}
-          onPress={setDirectionPressed}
+          onPress={handleDirectionPresesed}
         />
         <div className="flex">
           <RoundButton
             pressed={bButtonPressed}
-            onPress={setBButtonPressed}
+            onPress={handleBButtonPressed}
             letter="B"
             className="mt-6 mr-6"
           />
@@ -57,12 +100,12 @@ export default function Console() {
       <div className="flex justify-center mt-10">
         <FlatButton
           pressed={selectButtonPressed}
-          onPress={setSelectButtonPressed}
+          onPress={handleSelectButtonPressed}
           label="SELECT"
         />
         <FlatButton
           pressed={startButtonPressed}
-          onPress={setStartButtonPressed}
+          onPress={handleStartButtonPressed}
           label="START"
           className="ml-6"
         />
