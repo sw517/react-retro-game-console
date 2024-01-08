@@ -24,7 +24,7 @@ export default function Console() {
   const [startButtonPressed, setStartButtonPressed] = useState<boolean>(false);
 
   const handleDirectionPresesed = (direction: Direction | null) => {
-    if (direction) {
+    if (direction && directionPressed !== direction) {
       try {
         window.navigator.vibrate(directionPadVibrateLength);
       } catch (error) {}
