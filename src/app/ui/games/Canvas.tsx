@@ -1,3 +1,5 @@
+'use client';
+
 import { ForwardedRef, forwardRef, useEffect, useRef } from 'react';
 
 const Canvas = forwardRef(function Canvas(
@@ -16,7 +18,9 @@ const Canvas = forwardRef(function Canvas(
 ) {
   const interval = useRef<number | null>();
   useEffect(() => {
+    console.log('canvas useeffect');
     if (interval.current) {
+      console.log('canvas useeffect if');
       window.clearInterval(interval.current);
     }
     interval.current = window.setInterval(draw, 10);

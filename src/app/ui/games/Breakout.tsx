@@ -34,7 +34,6 @@ export default function Breakout({
   startPressed: boolean;
 }) {
   const dpr = useRef(1);
-  const animationInterval = useRef<number | null>(null);
   const canvas = useRef<Canvas>(initialCanvas);
   const [canvasPixelWidth, setCanvasPixelWidth] = useState<number>(
     canvas.current.width * dpr.current
@@ -357,13 +356,14 @@ export default function Breakout({
 
   useEffect(() => {
     // dpr.current = window.devicePixelRatio || 1;
-    console.log(dpr.current);
   }, []);
 
   useEffect(() => {
+    canvas.current.width = canvasElement.current?.clientWidth || 0;
+    canvas.current.height = canvasElement.current?.clientHeight || 0;
     setCanvasPixelWidth(canvas.current.width * dpr.current);
     setCanvasPixelHeight(canvas.current.height * dpr.current);
-  }, [dpr, canvas]);
+  }, [dpr, canvasElement]);
 
   useEffect(() => {
     initGameProperties();

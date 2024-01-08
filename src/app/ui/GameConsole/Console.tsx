@@ -10,8 +10,8 @@ import Breakout from '@/app/ui/games/Breakout';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
 
-const buttonVibrateLength = 50;
-const directionPadVibrateLength = 20;
+const buttonVibrateLength = 20;
+const directionPadVibrateLength = 10;
 
 export default function Console() {
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
