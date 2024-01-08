@@ -357,6 +357,7 @@ export default function Breakout({
 
   useEffect(() => {
     // dpr.current = window.devicePixelRatio || 1;
+    console.log(dpr.current);
   }, []);
 
   useEffect(() => {

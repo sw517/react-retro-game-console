@@ -7,8 +7,11 @@ import DirectionalPad from './DirectionalPad';
 import Screen from './Screen';
 import Trademark from './Trademark';
 import Breakout from '@/app/ui/games/Breakout';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Direction } from '@/types/direction';
+
+const buttonVibrateLength = 50;
+const directionPadVibrateLength = 20;
 
 export default function Console() {
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
@@ -23,7 +26,7 @@ export default function Console() {
   const handleDirectionPresesed = (direction: Direction | null) => {
     if (direction) {
       try {
-        window.navigator.vibrate(50);
+        window.navigator.vibrate(directionPadVibrateLength);
       } catch (error) {}
     }
     setDirectionPressed(direction);
@@ -32,7 +35,7 @@ export default function Console() {
   const handleAButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(100);
+        window.navigator.vibrate(buttonVibrateLength);
       } catch (error) {}
     }
     setAButtonPressed(pressed);
@@ -41,7 +44,7 @@ export default function Console() {
   const handleBButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(100);
+        window.navigator.vibrate(buttonVibrateLength);
       } catch (error) {}
     }
     setBButtonPressed(pressed);
@@ -50,7 +53,7 @@ export default function Console() {
   const handleSelectButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(100);
+        window.navigator.vibrate(buttonVibrateLength);
       } catch (error) {}
     }
     setSelectButtonPressed(pressed);
@@ -59,7 +62,7 @@ export default function Console() {
   const handleStartButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(100);
+        window.navigator.vibrate(buttonVibrateLength);
       } catch (error) {}
     }
     setStartButtonPressed(pressed);
