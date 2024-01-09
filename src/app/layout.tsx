@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased p-4 h-dvh w-dvw ${inter.className}`}>
-        <div className="text-right px-4 sm:px-6">
+        <div className="fixed top-0 left-0 w-full text-right pt-4 px-5">
           <GitHubLink />
         </div>
         {children}
