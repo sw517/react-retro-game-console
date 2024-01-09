@@ -16,6 +16,7 @@ export default function Button({
   dataTestId?: string;
 }) {
   const handleTouchStart = (e: TouchEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     onPress(true);
   };
   const handleMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
@@ -23,6 +24,7 @@ export default function Button({
     onPress(true);
   };
   const handleTouchEnd = (e: TouchEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     onPress(false);
   };
   const handleMouseUp = (e: MouseEvent<HTMLButtonElement>) => {

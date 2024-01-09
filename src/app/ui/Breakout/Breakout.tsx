@@ -29,9 +29,11 @@ const initialBricks: Bricks = {
 export default function Breakout({
   directionPressed,
   startPressed,
+  soundEnabled,
 }: {
   directionPressed: Direction | null;
   startPressed: boolean;
+  soundEnabled: boolean;
 }) {
   const dpr = useRef(1);
   const canvas = useRef<Canvas>(initialCanvas);
@@ -57,8 +59,15 @@ export default function Breakout({
   const soundtrackAudio = useRef<HTMLAudioElement>(
     new Audio('/audio/breakout.mp3')
   );
-  const collisionAudio = useRef<HTMLAudioElement>(
-    new Audio('/audio/click.mp3')
+  const collisionAudio = useRef<HTMLAudioElement>(new Audio('/audio/beep.mp3'));
+  const gameWonAudio = useRef<HTMLAudioElement>(
+    new Audio('/audio/victory.mp3')
+  );
+  const gameLostAudio = useRef<HTMLAudioElement>(
+    new Audio('/audio/game-over.mp3')
+  );
+  const countdownAudio = useRef<HTMLAudioElement>(
+    new Audio('/audio/countdown.mp3')
   );
 
   const initGameProperties = useCallback(() => {
@@ -243,15 +252,22 @@ export default function Breakout({
     };
 
     const setGameOver = (won = false) => {
+      changeBallSpeed(0);
+      soundtrackAudio.current.pause();
+      soundtrackAudio.current.currentTime = 0;
+
       gameActive.current = false;
       gameOver.current = true;
       if (won) {
         gameWon.current = true;
+        if (soundEnabled) {
+          gameWonAudio.current.play();
+        }
+      } else {
+        if (soundEnabled) {
+          gameLostAudio.current.play();
+        }
       }
-
-      changeBallSpeed(0);
-      soundtrackAudio.current.pause();
-      soundtrackAudio.current.currentTime = 0;
     };
 
     const checkEndGame = () => {
@@ -281,7 +297,9 @@ export default function Breakout({
               brick.status = 0;
               score.current = score.current + bricks.current.points;
 
-              collisionAudio.current.play();
+              if (soundEnabled) {
+                collisionAudio.current.play();
+              }
               checkEndGame();
             }
           }
@@ -370,7 +388,7 @@ export default function Breakout({
     if (gameOver.current) {
       drawGameOver();
     }
-  }, [directionPressed]);
+  }, [directionPressed, soundEnabled]);
 
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
@@ -383,12 +401,14 @@ export default function Breakout({
   useEffect(() => {
     if (startPressed && !gameOver.current && !countdownVisible.current) {
       if (soundtrackAudio.current.paused) {
-        soundtrackAudio.current.play();
+        if (soundEnabled) {
+          soundtrackAudio.current.play();
+        }
       } else {
         soundtrackAudio.current.pause();
       }
     }
-  }, [startPressed]);
+  }, [startPressed, soundEnabled]);
 
   useEffect(() => {
     initGameProperties();
@@ -404,6 +424,9 @@ export default function Breakout({
         instructionsVisible.current = false;
 
         countdownVisible.current = true;
+        if (soundEnabled) {
+          countdownAudio.current.play();
+        }
         const countdownInterval = window.setInterval(() => {
           countdown.current = countdown.current - 1;
 
@@ -430,7 +453,7 @@ export default function Breakout({
         initGameProperties();
       }
     }
-  }, [initGameProperties, startPressed]);
+  }, [initGameProperties, startPressed, soundEnabled]);
 
   return (
     <CanvasComponent

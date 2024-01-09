@@ -6,10 +6,19 @@ import FlatButton from './FlatButton';
 import DirectionalPad from './DirectionalPad';
 import Screen from './Screen';
 import Trademark from './Trademark';
-import Breakout from '@/app/ui/games/Breakout';
+import Breakout from '@/app/ui/Breakout/Breakout';
+import Settings from '../Settings';
 import Speaker from './Speaker';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
+import { ConsoleAppearanceKeys, SettingsKeys } from '@/types/settings';
+
+enum InputType {
+  DIRECTION = 'direction',
+  BUTTON = 'button',
+}
+
+type InputTypeValue = 'A' | 'B' | Direction;
 
 const buttonVibrateLength = 10;
 
@@ -23,12 +32,66 @@ export default function Console() {
   const [selectButtonPressed, setSelectButtonPressed] =
     useState<boolean>(false);
   const [startButtonPressed, setStartButtonPressed] = useState<boolean>(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedSettingsIndex, setSelectedSettingsIndex] = useState(0);
+  const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  const settingsItems = [
+    {
+      text: 'Vibration',
+      key: SettingsKeys.VIBRATION,
+      active: vibrationEnabled,
+    },
+    { text: 'Sound', key: SettingsKeys.SOUND, active: soundEnabled },
+    {
+      text: 'Console appearance',
+      key: SettingsKeys.APPEARANCE,
+      childItems: [
+        { text: 'red', key: ConsoleAppearanceKeys.RED },
+        { text: 'purple', key: ConsoleAppearanceKeys.PURPLE },
+        { text: 'yellow', key: ConsoleAppearanceKeys.YELLOW },
+      ],
+    },
+  ];
+
+  const handleSettingsInput = (inputType: InputType, value: InputTypeValue) => {
+    if (inputType === InputType.DIRECTION) {
+      if (
+        value === Direction.DOWN &&
+        selectedSettingsIndex < settingsItems.length - 1
+      ) {
+        setSelectedSettingsIndex((i) => i + 1);
+      } else if (value === Direction.UP && selectedSettingsIndex > 0) {
+        setSelectedSettingsIndex((i) => i - 1);
+      }
+    } else {
+      if (value === 'B') {
+        setSettingsOpen(false);
+      } else if (value === 'A') {
+        switch (settingsItems[selectedSettingsIndex].key) {
+          case SettingsKeys.SOUND:
+            setSoundEnabled(!soundEnabled);
+            return;
+          case SettingsKeys.VIBRATION:
+            setVibrationEnabled(!vibrationEnabled);
+            return;
+        }
+      }
+    }
+  };
 
   const handleDirectionPresesed = (direction: Direction | null) => {
     if (direction && directionPressed !== direction) {
       try {
-        window.navigator.vibrate(buttonVibrateLength);
+        if (vibrationEnabled) {
+          window.navigator.vibrate(buttonVibrateLength);
+        }
       } catch (error) {}
+
+      if (settingsOpen) {
+        handleSettingsInput(InputType.DIRECTION, direction);
+      }
     }
     setDirectionPressed(direction);
   };
@@ -36,8 +99,14 @@ export default function Console() {
   const handleAButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(buttonVibrateLength);
+        if (vibrationEnabled) {
+          window.navigator.vibrate(buttonVibrateLength);
+        }
       } catch (error) {}
+
+      if (settingsOpen) {
+        handleSettingsInput(InputType.BUTTON, 'A');
+      }
     }
     setAButtonPressed(pressed);
   };
@@ -45,8 +114,14 @@ export default function Console() {
   const handleBButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(buttonVibrateLength);
+        if (vibrationEnabled) {
+          window.navigator.vibrate(buttonVibrateLength);
+        }
       } catch (error) {}
+
+      if (settingsOpen) {
+        handleSettingsInput(InputType.BUTTON, 'B');
+      }
     }
     setBButtonPressed(pressed);
   };
@@ -54,16 +129,22 @@ export default function Console() {
   const handleSelectButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(buttonVibrateLength);
+        if (vibrationEnabled) {
+          window.navigator.vibrate(buttonVibrateLength);
+        }
       } catch (error) {}
     }
+
+    if (power && pressed) setSettingsOpen(true);
     setSelectButtonPressed(pressed);
   };
 
   const handleStartButtonPressed = (pressed: boolean) => {
     if (pressed) {
       try {
-        window.navigator.vibrate(buttonVibrateLength);
+        if (vibrationEnabled) {
+          window.navigator.vibrate(buttonVibrateLength);
+        }
       } catch (error) {}
 
       if (!power) {
@@ -77,10 +158,17 @@ export default function Console() {
   return (
     <div className={styles.console}>
       <Screen power={power}>
-        {!!power && (
+        {!!power && settingsOpen && (
+          <Settings
+            selectedIndex={selectedSettingsIndex}
+            settingsItems={settingsItems}
+          />
+        )}
+        {!!power && !settingsOpen && (
           <Breakout
             directionPressed={directionPressed}
             startPressed={startButtonPressed}
+            soundEnabled={soundEnabled}
           />
         )}
       </Screen>
