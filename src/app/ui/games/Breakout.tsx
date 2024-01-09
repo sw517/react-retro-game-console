@@ -381,7 +381,7 @@ export default function Breakout({
   }, []);
 
   useEffect(() => {
-    if (startPressed && !gameOver.current) {
+    if (startPressed && !gameOver.current && !countdownVisible.current) {
       if (soundtrackAudio.current.paused) {
         soundtrackAudio.current.play();
       } else {

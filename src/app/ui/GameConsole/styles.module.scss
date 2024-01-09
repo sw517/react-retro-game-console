@@ -18,6 +18,7 @@ $screen-background-color: #222;
   border-bottom-left-radius: 999px 250px;
   border: 5px solid rgba(0, 0, 0, 0.3);
   box-shadow: $button-box-shadow--reflection;
+  user-select: none;
 }
 
 .screen {
