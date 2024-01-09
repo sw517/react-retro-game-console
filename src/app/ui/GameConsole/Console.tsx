@@ -7,6 +7,7 @@ import DirectionalPad from './DirectionalPad';
 import Screen from './Screen';
 import Trademark from './Trademark';
 import Breakout from '@/app/ui/games/Breakout';
+import Speaker from './Speaker';
 import { useState } from 'react';
 import { Direction } from '@/types/direction';
 
@@ -108,7 +109,7 @@ export default function Console() {
           />
         </div>
       </div>
-      <div className="flex justify-center mt-10">
+      <div className="flex justify-center mt-6 min-[400px]:mt-10">
         <FlatButton
           pressed={selectButtonPressed}
           onPress={handleSelectButtonPressed}
@@ -123,6 +124,7 @@ export default function Console() {
           dataTestId="start-button"
         />
       </div>
+      <Speaker />
     </div>
   );
 }
