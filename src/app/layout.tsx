@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import GitHubLink from './ui/GitHubLink';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -17,6 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`antialiased p-4 h-dvh w-dvw ${inter.className}`}>
+        <div className="text-right px-4 sm:px-6">
+          <GitHubLink />
+        </div>
         {children}
       </body>
     </html>
