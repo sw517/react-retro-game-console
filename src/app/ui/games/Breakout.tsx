@@ -64,7 +64,7 @@ export default function Breakout({
     canvas.current.height = ctx.current.canvas.clientHeight;
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
-    // ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
+    ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
 
     // Init ball
     ball.current.xPos = canvas.current.width / 2;
@@ -96,6 +96,9 @@ export default function Breakout({
 
   const draw = useCallback(() => {
     if (!ctx.current) return;
+
+    ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
+    ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
 
     const movePaddle = () => {
       if (!gameActive.current || gamePaused.current) return;
@@ -269,7 +272,7 @@ export default function Breakout({
               ball.current.dy = -ball.current.dy;
               brick.status = 0;
               score.current = score.current + bricks.current.points;
-              // paddle.current = width -= 1;
+
               checkEndGame();
             }
           }
@@ -361,7 +364,7 @@ export default function Breakout({
   }, [paddle, ball, canvas, ctx, directionPressed]);
 
   useEffect(() => {
-    // dpr.current = window.devicePixelRatio || 1;
+    dpr.current = window.devicePixelRatio || 1;
   }, []);
 
   useEffect(() => {
