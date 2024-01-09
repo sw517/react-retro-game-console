@@ -54,6 +54,12 @@ export default function Breakout({
   const instructionsVisible = useRef(true);
   const countdownVisible = useRef(false);
   const countdown = useRef(3);
+  const soundtrackAudio = useRef<HTMLAudioElement>(
+    new Audio('/audio/breakout.mp3')
+  );
+  const collisionAudio = useRef<HTMLAudioElement>(
+    new Audio('/audio/click.mp3')
+  );
 
   const initGameProperties = useCallback(() => {
     ctx.current = canvasElement.current?.getContext('2d');
@@ -244,6 +250,8 @@ export default function Breakout({
       }
 
       changeBallSpeed(0);
+      soundtrackAudio.current.pause();
+      soundtrackAudio.current.currentTime = 0;
     };
 
     const checkEndGame = () => {
@@ -273,6 +281,7 @@ export default function Breakout({
               brick.status = 0;
               score.current = score.current + bricks.current.points;
 
+              collisionAudio.current.play();
               checkEndGame();
             }
           }
@@ -361,18 +370,25 @@ export default function Breakout({
     if (gameOver.current) {
       drawGameOver();
     }
-  }, [paddle, ball, canvas, ctx, directionPressed]);
+  }, [directionPressed]);
 
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
-  }, []);
-
-  useEffect(() => {
     canvas.current.width = canvasElement.current?.clientWidth || 0;
     canvas.current.height = canvasElement.current?.clientHeight || 0;
     setCanvasPixelWidth(canvas.current.width * dpr.current);
     setCanvasPixelHeight(canvas.current.height * dpr.current);
-  }, [dpr, canvasElement]);
+  }, []);
+
+  useEffect(() => {
+    if (startPressed && !gameOver.current) {
+      if (soundtrackAudio.current.paused) {
+        soundtrackAudio.current.play();
+      } else {
+        soundtrackAudio.current.pause();
+      }
+    }
+  }, [startPressed]);
 
   useEffect(() => {
     initGameProperties();
