@@ -6,7 +6,7 @@ export default function Trademark() {
     <div
       className={`inline-block text-black text-center px-2 border-2 border-black rounded-full opacity-25 bold text-xs ${ubuntu.className}`}
     >
-      Made with React.js
+      Made with React
     </div>
   );
 }

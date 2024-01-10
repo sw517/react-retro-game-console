@@ -69,6 +69,7 @@ export default function Breakout({
   const countdownAudio = useRef<HTMLAudioElement>(
     new Audio('/audio/countdown.mp3')
   );
+  const drawInterval = useRef<number | null>(null);
   const countdownInterval = useRef<number | null>(null);
 
   const initGameProperties = useCallback(() => {
@@ -109,7 +110,7 @@ export default function Breakout({
     ball.current.dy = ball.current.dy < 0 ? -speed : speed;
   };
 
-  const draw = () => {
+  const draw = useCallback(() => {
     if (!ctx.current) return;
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
@@ -388,7 +389,7 @@ export default function Breakout({
     if (gameOver.current) {
       drawGameOver();
     }
-  };
+  }, [directionPressed, soundEnabled]);
 
   // Set canvas width when component mounts
   useEffect(() => {
@@ -400,6 +401,7 @@ export default function Breakout({
 
     const soundtrackAudioNode = soundtrackAudio.current;
     const countdownAudioNode = countdownAudio.current;
+    const countdownIntervalId = countdownInterval.current;
     return () => {
       if (soundtrackAudioNode) {
         soundtrackAudioNode.pause();
@@ -409,8 +411,20 @@ export default function Breakout({
         countdownAudioNode.pause();
         countdownAudioNode.currentTime = 0;
       }
+      if (countdownIntervalId) {
+        window.clearInterval(countdownIntervalId);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    drawInterval.current = window.setInterval(draw, 10);
+    const intervalId = drawInterval.current;
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [draw]);
 
   // Pause or play soundtrack when Start is pressed
   useEffect(() => {
@@ -442,6 +456,8 @@ export default function Breakout({
         if (soundEnabled) {
           countdownAudio.current.play();
         }
+        countdownInterval.current &&
+          window.clearInterval(countdownInterval.current);
         countdownInterval.current = window.setInterval(() => {
           countdown.current = countdown.current - 1;
 
@@ -476,12 +492,18 @@ export default function Breakout({
   }, [initGameProperties, startPressed, soundEnabled]);
 
   return (
-    <CanvasComponent
+    <canvas
       ref={canvasElement}
       className={styles.canvas}
       width={canvasPixelWidth}
       height={canvasPixelHeight}
-      draw={draw}
     />
+    // <CanvasComponent
+    //   ref={canvasElement}
+    //   className={styles.canvas}
+    //   width={canvasPixelWidth}
+    //   height={canvasPixelHeight}
+    //   draw={draw}
+    // />
   );
 }
