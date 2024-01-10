@@ -22,6 +22,11 @@ const Canvas = forwardRef(function Canvas(
       window.clearInterval(interval.current);
     }
     interval.current = window.setInterval(draw, 10);
+
+    const id = interval.current;
+    return () => {
+      window.clearInterval(id);
+    };
   }, [draw]);
 
   return (

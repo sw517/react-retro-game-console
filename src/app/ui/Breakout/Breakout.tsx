@@ -69,6 +69,7 @@ export default function Breakout({
   const countdownAudio = useRef<HTMLAudioElement>(
     new Audio('/audio/countdown.mp3')
   );
+  const countdownInterval = useRef<number | null>(null);
 
   const initGameProperties = useCallback(() => {
     ctx.current = canvasElement.current?.getContext('2d');
@@ -78,10 +79,9 @@ export default function Breakout({
     canvas.current.width = ctx.current.canvas.clientWidth;
     canvas.current.height = ctx.current.canvas.clientHeight;
 
-    ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
-    ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
-
     // Init ball
+    ball.current.dx = 0;
+    ball.current.dy = 0;
     ball.current.xPos = canvas.current.width / 2;
     ball.current.yPos =
       canvas.current.height - paddle.current.height - ball.current.diameter - 2;
@@ -102,14 +102,14 @@ export default function Breakout({
         bricks.current.instances[c][r] = { x: 0, y: 0, status: 1 };
       }
     }
-  }, [paddle, ball, ctx, canvas]);
+  }, []);
 
   const changeBallSpeed = (speed: number) => {
     ball.current.dx = ball.current.dx < 0 ? -speed : speed;
     ball.current.dy = ball.current.dy < 0 ? -speed : speed;
   };
 
-  const draw = useCallback(() => {
+  const draw = () => {
     if (!ctx.current) return;
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
@@ -388,16 +388,31 @@ export default function Breakout({
     if (gameOver.current) {
       drawGameOver();
     }
-  }, [directionPressed, soundEnabled]);
+  };
 
+  // Set canvas width when component mounts
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
     canvas.current.width = canvasElement.current?.clientWidth || 0;
     canvas.current.height = canvasElement.current?.clientHeight || 0;
     setCanvasPixelWidth(canvas.current.width * dpr.current);
     setCanvasPixelHeight(canvas.current.height * dpr.current);
+
+    const soundtrackAudioNode = soundtrackAudio.current;
+    const countdownAudioNode = countdownAudio.current;
+    return () => {
+      if (soundtrackAudioNode) {
+        soundtrackAudioNode.pause();
+        soundtrackAudioNode.currentTime = 0;
+      }
+      if (countdownAudioNode) {
+        countdownAudioNode.pause();
+        countdownAudioNode.currentTime = 0;
+      }
+    };
   }, []);
 
+  // Pause or play soundtrack when Start is pressed
   useEffect(() => {
     if (startPressed && !gameOver.current && !countdownVisible.current) {
       if (soundtrackAudio.current.paused) {
@@ -427,11 +442,12 @@ export default function Breakout({
         if (soundEnabled) {
           countdownAudio.current.play();
         }
-        const countdownInterval = window.setInterval(() => {
+        countdownInterval.current = window.setInterval(() => {
           countdown.current = countdown.current - 1;
 
           if (countdown.current <= 0) {
-            window.clearInterval(countdownInterval);
+            countdownInterval.current &&
+              window.clearInterval(countdownInterval.current);
             countdownVisible.current = false;
 
             gameActive.current = true;
@@ -453,6 +469,10 @@ export default function Breakout({
         initGameProperties();
       }
     }
+
+    return () => {
+      console.log('clean up');
+    };
   }, [initGameProperties, startPressed, soundEnabled]);
 
   return (
