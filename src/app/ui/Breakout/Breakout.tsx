@@ -254,17 +254,17 @@ export default function Breakout({
       soundtrackAudio.current.pause();
       soundtrackAudio.current.currentTime = 0;
 
-      gameState.current = 'ended';
-      if (won) {
-        gameWon.current = true;
-        if (soundEnabled) {
-          gameWonAudio.current.play();
-        }
-      } else {
-        if (soundEnabled) {
+      if (gameState.current !== 'ended') {
+        if (won) {
+          gameWon.current = true;
+          if (soundEnabled) {
+            gameWonAudio.current.play();
+          }
+        } else if (soundEnabled) {
           gameLostAudio.current.play();
         }
       }
+      gameState.current = 'ended';
     };
 
     const checkEndGame = () => {
@@ -458,9 +458,9 @@ export default function Breakout({
           gamePaused.current = !gamePaused.current;
           if (soundEnabled) {
             if (gamePaused.current) {
-              soundtrackAudio.current.play();
-            } else {
               soundtrackAudio.current.pause();
+            } else {
+              soundtrackAudio.current.play();
             }
           }
           break;
