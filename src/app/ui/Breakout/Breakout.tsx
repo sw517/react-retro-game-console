@@ -391,9 +391,6 @@ export default function Breakout({
     const soundtrackAudioNode = soundtrackAudio.current;
     const countdownAudioNode = countdownAudio.current;
 
-    console.log('updated gameState to ready');
-    gameState.current = 'ready';
-
     return () => {
       gameState.current = 'mounting';
       countdownInterval.current &&
@@ -423,13 +420,17 @@ export default function Breakout({
   }, [initGameProperties]);
 
   useEffect(() => {
-    console.log('in input useeffect: ', gameState.current);
-
-    if (gameState.current === 'mounting') return;
-    console.log('after if');
+    // Prevent countdown triggering when mounting
+    if (gameState.current === 'mounting' && input === Button.B) {
+      gameState.current = 'ready';
+    }
 
     if (input === Button.START) {
       switch (gameState.current) {
+        case 'mounting':
+          gameState.current = 'ready';
+          break;
+
         case 'ready':
           if (soundEnabled) soundtrackAudio.current.play();
           gameState.current = 'countdown';
