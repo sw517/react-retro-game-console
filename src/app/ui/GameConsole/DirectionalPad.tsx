@@ -5,6 +5,7 @@ import DirectionalPadImage from './DirectionalPadImage';
 import { MouseEvent, TouchEvent, useState } from 'react';
 import { Direction } from '@/types/input';
 import isTouchEvent from '@/app/helpers/is-touch-event';
+import useNavigator from '@/app/hooks/useNavigator';
 
 export default function DirectionalPad({
   onPress,
@@ -13,6 +14,8 @@ export default function DirectionalPad({
   onPress: (arg0: Direction | null) => void;
   dataTestId?: string;
 }) {
+  const { vibrate } = useNavigator();
+
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
     null
   );
@@ -60,6 +63,7 @@ export default function DirectionalPad({
     const direction = calculatePressDirection(e) || null;
     setDirectionPressed(direction);
     onPress(direction);
+    vibrate();
   };
 
   const handleTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
@@ -69,6 +73,7 @@ export default function DirectionalPad({
 
     setDirectionPressed(direction);
     onPress(direction);
+    vibrate;
   };
 
   const handleRelease = (
