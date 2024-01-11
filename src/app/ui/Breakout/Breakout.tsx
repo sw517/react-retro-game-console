@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Direction } from '@/types/direction';
+import { Button, Direction } from '@/types/input';
 import styles from './styles.module.scss';
 import { type Paddle, Ball, Bricks, Canvas } from '@/types/breakout';
-import CanvasComponent from './Canvas';
+import { InputValue } from '@/types/input';
 
 const initialCanvas: Canvas = {
   width: 167,
@@ -26,13 +26,13 @@ const initialBricks: Bricks = {
   instances: [],
 };
 
+type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
+
 export default function Breakout({
-  directionPressed,
-  startPressed,
+  input,
   soundEnabled,
 }: {
-  directionPressed: Direction | null;
-  startPressed: boolean;
+  input: InputValue | null;
   soundEnabled: boolean;
 }) {
   const dpr = useRef(1);
@@ -49,12 +49,9 @@ export default function Breakout({
   const paddle = useRef<Paddle>(initialPaddle);
   const bricks = useRef<Bricks>(initialBricks);
   const score = useRef(0);
-  const gameActive = useRef(false);
+  const gameState = useRef<GameState>('mounting');
   const gamePaused = useRef(false);
-  const gameOver = useRef(false);
   const gameWon = useRef(false);
-  const instructionsVisible = useRef(true);
-  const countdownVisible = useRef(false);
   const countdown = useRef(3);
   const soundtrackAudio = useRef<HTMLAudioElement>(
     new Audio('/audio/breakout.mp3')
@@ -117,13 +114,13 @@ export default function Breakout({
     ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
 
     const movePaddle = () => {
-      if (!gameActive.current || gamePaused.current) return;
+      if (gameState.current !== 'active' || gamePaused.current) return;
 
-      if (directionPressed === Direction.RIGHT) {
+      if (input === Direction.RIGHT) {
         if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
           paddle.current.xPos += 3;
         }
-      } else if (directionPressed === Direction.LEFT) {
+      } else if (input === Direction.LEFT) {
         if (paddle.current.xPos >= 0) {
           paddle.current.xPos -= 3;
         }
@@ -257,8 +254,7 @@ export default function Breakout({
       soundtrackAudio.current.pause();
       soundtrackAudio.current.currentTime = 0;
 
-      gameActive.current = false;
-      gameOver.current = true;
+      gameState.current = 'ended';
       if (won) {
         gameWon.current = true;
         if (soundEnabled) {
@@ -320,23 +316,16 @@ export default function Breakout({
       ctx.current.translate(-0.5, -0.5);
     };
 
-    const drawIntructions = () => {
+    const drawInstructions = () => {
       if (!ctx.current) return;
 
-      ctx.current.translate(0.5, 0.5);
-      ctx.current.beginPath();
-      ctx.current.rect(0, 0, canvas.current.width, 56);
+      ctx.current.font = '18px Courier';
       ctx.current.fillStyle = canvas.current.color;
-      ctx.current.fill();
-      ctx.current.lineWidth = 3;
-      ctx.current.strokeStyle = canvas.current.background;
-      ctx.current.stroke();
-      ctx.current.closePath();
-      ctx.current.font = '10px Courier';
-      ctx.current.fillStyle = canvas.current.background;
-      ctx.current.fillText('Press Start to begin', 8, 20);
-      ctx.current.fillText('Left/Right arrows to move', 8, 40);
-      ctx.current.translate(-0.5, -0.5);
+      ctx.current.fillText(
+        'Press START',
+        canvas.current.width / 2 - 60,
+        canvas.current.height / 2 + 10
+      );
     };
 
     const drawCountdown = () => {
@@ -364,11 +353,11 @@ export default function Breakout({
         canvas.current.height / 2 + 10
       );
 
-      ctx.current.font = '10px Courier';
+      ctx.current.font = '11px Courier';
       ctx.current.fillStyle = canvas.current.color;
       ctx.current.fillText(
-        '(Press Start to restart)',
-        canvas.current.width / 2 - 72,
+        '(Press Start to reset)',
+        canvas.current.width / 2 - 76,
         canvas.current.height / 2 + 30
       );
     };
@@ -380,16 +369,16 @@ export default function Breakout({
     drawBricks();
     detectBrickCollision();
     drawScore();
-    if (instructionsVisible.current) {
-      drawIntructions();
+    if (['mounting', 'ready'].includes(gameState.current)) {
+      drawInstructions();
     }
-    if (countdownVisible.current) {
+    if (gameState.current === 'countdown') {
       drawCountdown();
     }
-    if (gameOver.current) {
+    if (gameState.current === 'ended') {
       drawGameOver();
     }
-  }, [directionPressed, soundEnabled]);
+  }, [input, soundEnabled]);
 
   // Set canvas width when component mounts
   useEffect(() => {
@@ -401,8 +390,14 @@ export default function Breakout({
 
     const soundtrackAudioNode = soundtrackAudio.current;
     const countdownAudioNode = countdownAudio.current;
-    const countdownIntervalId = countdownInterval.current;
+
+    console.log('updated gameState to ready');
+    gameState.current = 'ready';
+
     return () => {
+      gameState.current = 'mounting';
+      countdownInterval.current &&
+        window.clearInterval(countdownInterval.current);
       if (soundtrackAudioNode) {
         soundtrackAudioNode.pause();
         soundtrackAudioNode.currentTime = 0;
@@ -410,9 +405,6 @@ export default function Breakout({
       if (countdownAudioNode) {
         countdownAudioNode.pause();
         countdownAudioNode.currentTime = 0;
-      }
-      if (countdownIntervalId) {
-        window.clearInterval(countdownIntervalId);
       }
     };
   }, []);
@@ -426,70 +418,66 @@ export default function Breakout({
     };
   }, [draw]);
 
-  // Pause or play soundtrack when Start is pressed
-  useEffect(() => {
-    if (startPressed && !gameOver.current && !countdownVisible.current) {
-      if (soundtrackAudio.current.paused) {
-        if (soundEnabled) {
-          soundtrackAudio.current.play();
-        }
-      } else {
-        soundtrackAudio.current.pause();
-      }
-    }
-  }, [startPressed, soundEnabled]);
-
   useEffect(() => {
     initGameProperties();
   }, [initGameProperties]);
 
   useEffect(() => {
-    if (startPressed) {
-      if (gameActive.current) {
-        gamePaused.current = !gamePaused.current;
-      }
+    console.log('in input useeffect: ', gameState.current);
 
-      if (instructionsVisible.current) {
-        instructionsVisible.current = false;
+    if (gameState.current === 'mounting') return;
+    console.log('after if');
 
-        countdownVisible.current = true;
-        if (soundEnabled) {
-          countdownAudio.current.play();
-        }
-        countdownInterval.current &&
-          window.clearInterval(countdownInterval.current);
-        countdownInterval.current = window.setInterval(() => {
-          countdown.current = countdown.current - 1;
+    if (input === Button.START) {
+      switch (gameState.current) {
+        case 'ready':
+          if (soundEnabled) soundtrackAudio.current.play();
+          gameState.current = 'countdown';
 
-          if (countdown.current <= 0) {
-            countdownInterval.current &&
-              window.clearInterval(countdownInterval.current);
-            countdownVisible.current = false;
+          if (soundEnabled) countdownAudio.current.play();
+          countdownInterval.current &&
+            window.clearInterval(countdownInterval.current);
+          countdownInterval.current = window.setInterval(() => {
+            countdown.current = countdown.current - 1;
 
-            gameActive.current = true;
-            changeBallSpeed(1);
+            if (countdown.current <= 0) {
+              countdownInterval.current &&
+                window.clearInterval(countdownInterval.current);
+
+              gameState.current = 'active';
+              changeBallSpeed(1);
+            }
+          }, 1000);
+          break;
+
+        case 'countdown':
+          break;
+
+        case 'active':
+          gamePaused.current = !gamePaused.current;
+          if (soundEnabled) {
+            if (gamePaused.current) {
+              soundtrackAudio.current.play();
+            } else {
+              soundtrackAudio.current.pause();
+            }
           }
-        }, 1000);
-      } else if (gameOver.current) {
-        changeBallSpeed(0);
-        countdown.current = 3;
-        instructionsVisible.current = true;
-        countdownVisible.current = false;
-        gameActive.current = false;
-        gameOver.current = false;
-        gameWon.current = false;
-        score.current = 0;
-        ball.current = initialBall;
-        paddle.current = initialPaddle;
-        bricks.current = initialBricks;
-        initGameProperties();
+          break;
+
+        case 'ended':
+          changeBallSpeed(0);
+          countdown.current = 3;
+          gameState.current = 'ready';
+          gameWon.current = false;
+          score.current = 0;
+          ball.current = initialBall;
+          paddle.current = initialPaddle;
+          bricks.current = initialBricks;
+          initGameProperties();
+          break;
       }
     }
-
-    return () => {
-      console.log('clean up');
-    };
-  }, [initGameProperties, startPressed, soundEnabled]);
+  }, [initGameProperties, input, soundEnabled]);
 
   return (
     <canvas
@@ -498,12 +486,5 @@ export default function Breakout({
       width={canvasPixelWidth}
       height={canvasPixelHeight}
     />
-    // <CanvasComponent
-    //   ref={canvasElement}
-    //   className={styles.canvas}
-    //   width={canvasPixelWidth}
-    //   height={canvasPixelHeight}
-    //   draw={draw}
-    // />
   );
 }

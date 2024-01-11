@@ -1,6 +1,6 @@
 import styles from './styles.module.scss';
 import clsx from 'clsx';
-import { Direction } from '@/types/direction';
+import { Direction } from '@/types/input';
 
 const borderColor = '#000';
 const buttonColor = '#333';

@@ -2,19 +2,21 @@
 
 import styles from '@/app/ui/GameConsole/styles.module.scss';
 import DirectionalPadImage from './DirectionalPadImage';
-import { MouseEvent, TouchEvent } from 'react';
-import { Direction } from '@/types/direction';
+import { MouseEvent, TouchEvent, useState } from 'react';
+import { Direction } from '@/types/input';
 import isTouchEvent from '@/app/helpers/is-touch-event';
 
 export default function DirectionalPad({
-  directionPressed,
   onPress,
   dataTestId,
 }: {
   onPress: (arg0: Direction | null) => void;
-  directionPressed: Direction | null;
   dataTestId?: string;
 }) {
+  const [directionPressed, setDirectionPressed] = useState<Direction | null>(
+    null
+  );
+
   const calculatePressDirection = (
     e: TouchEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
   ) => {
@@ -51,31 +53,29 @@ export default function DirectionalPad({
     }
   };
 
-  const handleTouchStart = (e: TouchEvent<HTMLButtonElement>) => {
+  const handlePress = (
+    e: TouchEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
+  ) => {
     e.preventDefault();
     const direction = calculatePressDirection(e) || null;
+    setDirectionPressed(direction);
     onPress(direction);
   };
 
   const handleTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const direction = calculatePressDirection(e) || null;
+    if (direction === directionPressed) return;
+
+    setDirectionPressed(direction);
     onPress(direction);
   };
 
-  const handleTouchEnd = (e: TouchEvent<HTMLButtonElement>) => {
+  const handleRelease = (
+    e: TouchEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
+  ) => {
     e.preventDefault();
-    onPress(null);
-  };
-
-  const handleMouseDown = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const direction = calculatePressDirection(e) || null;
-    onPress(direction);
-  };
-
-  const handleMouseUp = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+    setDirectionPressed(null);
     onPress(null);
   };
 
@@ -83,6 +83,9 @@ export default function DirectionalPad({
     e.preventDefault();
     if (e.buttons) {
       const direction = calculatePressDirection(e) || null;
+      if (direction === directionPressed) return;
+
+      setDirectionPressed(direction);
       onPress(direction);
     }
   };
@@ -93,12 +96,12 @@ export default function DirectionalPad({
 
   return (
     <button
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
+      onMouseDown={handlePress}
+      onMouseUp={handleRelease}
       onMouseMove={handleMouseMove}
-      onTouchStart={handleTouchStart}
+      onTouchStart={handlePress}
       onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onTouchEnd={handleRelease}
       onContextMenu={handleContextMenu}
       className={styles['d-pad']}
       data-testid={dataTestId}
