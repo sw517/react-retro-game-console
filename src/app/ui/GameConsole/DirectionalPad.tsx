@@ -1,11 +1,13 @@
 'use client';
 
-import styles from '@/app/ui/GameConsole/styles.module.scss';
-import DirectionalPadImage from './DirectionalPadImage';
-import { MouseEvent, TouchEvent, useState } from 'react';
+import { MouseEvent, TouchEvent, useContext, useState } from 'react';
+import { SettingsContext } from '@/app/contexts/SettingsContext';
+import { SettingsKeys } from '@/types/settings';
 import { Direction } from '@/types/input';
 import isTouchEvent from '@/app/helpers/is-touch-event';
 import useNavigator from '@/app/hooks/useNavigator';
+import styles from '@/app/ui/GameConsole/styles.module.scss';
+import DirectionalPadImage from './DirectionalPadImage';
 
 export default function DirectionalPad({
   onPress,
@@ -14,6 +16,7 @@ export default function DirectionalPad({
   onPress: (arg0: Direction | null) => void;
   dataTestId?: string;
 }) {
+  const settings = useContext(SettingsContext);
   const { vibrate } = useNavigator();
 
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
@@ -63,7 +66,7 @@ export default function DirectionalPad({
     const direction = calculatePressDirection(e) || null;
     setDirectionPressed(direction);
     onPress(direction);
-    vibrate();
+    if (settings[SettingsKeys.VIBRATION_ENABLED]) vibrate();
   };
 
   const handleTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
@@ -73,7 +76,7 @@ export default function DirectionalPad({
 
     setDirectionPressed(direction);
     onPress(direction);
-    vibrate;
+    if (settings[SettingsKeys.VIBRATION_ENABLED]) vibrate();
   };
 
   const handleRelease = (

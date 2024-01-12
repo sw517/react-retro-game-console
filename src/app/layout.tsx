@@ -17,11 +17,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`antialiased p-4 h-dvh w-dvw ${inter.className}`}>
+      <body className={`antialiased h-dvh w-dvw ${inter.className}`}>
         <div className="fixed top-0 left-0 w-full text-right pt-4 px-5">
           <GitHubLink />
         </div>
         {children}
+        <div className="fixed bottom-0 left-0 w-full text-xs text-gray-400">
+          <div className="ml-auto mr-auto max-w-xs pb-4 px-5 flex justify-between items-center">
+            <span>START = Power on</span>
+            <span>SELECT = Settings</span>
+          </div>
+        </div>
       </body>
     </html>
   );

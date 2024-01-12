@@ -19,6 +19,26 @@ $screen-background-color: #222;
   border: 5px solid rgba(0, 0, 0, 0.3);
   box-shadow: $button-box-shadow--reflection;
   user-select: none;
+
+  &--red {
+    background-color: rgb(183, 66, 66);
+  }
+
+  &--yellow {
+    background-color: rgb(249 197 44);
+  }
+
+  &--green {
+    background-color: rgb(125 184 9);
+  }
+
+  &--turqoise {
+    background-color: rgb(1 128 145);
+  }
+
+  &--purple {
+    background-color: rgb(94 77 199);
+  }
 }
 
 .screen {

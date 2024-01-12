@@ -1,6 +1,8 @@
+import { TouchEvent, MouseEvent, useState, useContext } from 'react';
+import { SettingsContext } from '@/app/contexts/SettingsContext';
+import { SettingsKeys } from '@/types/settings';
 import styles from '@/app/ui/GameConsole/styles.module.scss';
 import clsx from 'clsx';
-import { TouchEvent, MouseEvent, useState } from 'react';
 import useNavigator from '@/app/hooks/useNavigator';
 import { Button as ButtonType } from '@/types/input';
 
@@ -17,6 +19,7 @@ export default function Button({
   type?: 'round' | 'flat';
   dataTestId?: string;
 }) {
+  const settings = useContext(SettingsContext);
   const { vibrate } = useNavigator();
   const [pressed, setPressed] = useState(false);
 
@@ -24,7 +27,9 @@ export default function Button({
     e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
-    vibrate();
+    if (settings[SettingsKeys.VIBRATION_ENABLED]) {
+      vibrate();
+    }
     setPressed(true);
     onPress(value);
   };
