@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Direction, InputValue, Button as ButtonType } from '@/types/input';
 import {
   SettingsItem,
@@ -8,7 +8,10 @@ import {
   ConsoleColors,
   SettingsType,
 } from '@/types/settings';
-import { SettingsContext } from '@/app/contexts/SettingsContext';
+import {
+  SettingsContext,
+  defaultSettings,
+} from '@/app/contexts/SettingsContext';
 import styles from './styles.module.scss';
 import Button from './Button';
 import DirectionalPad from './DirectionalPad';
@@ -27,11 +30,23 @@ export default function Console() {
   const [selectedSettingsParentId, setSelectedSettingsParentId] = useState<
     SettingsItem['id'] | null
   >(null);
-  const [settings, setSettings] = useState({
-    [SettingsKeys.VIBRATION_ENABLED]: true,
-    [SettingsKeys.SOUND_ENABLED]: true,
-    [SettingsKeys.COLOR]: ConsoleColors.RED,
+  const [settings, setSettings] = useState(() => {
+    if (localStorage === undefined) return defaultSettings;
+
+    const stringifiedSettings = localStorage.getItem('settings');
+    if (!stringifiedSettings) return defaultSettings;
+
+    try {
+      const parsedSettings = JSON.parse(stringifiedSettings);
+      return parsedSettings;
+    } catch (e) {}
+
+    return defaultSettings;
   });
+
+  useEffect(() => {
+    localStorage.setItem('settings', JSON.stringify(settings));
+  }, [settings]);
 
   const allSettingsItems: SettingsItem[] = [
     {
