@@ -31,17 +31,14 @@ export default function Console() {
     SettingsItem['id'] | null
   >(null);
   const [settings, setSettings] = useState(() => {
-    if (localStorage === undefined) return defaultSettings;
-
-    const stringifiedSettings = localStorage.getItem('settings');
-    if (!stringifiedSettings) return defaultSettings;
-
     try {
+      const stringifiedSettings = localStorage.getItem('settings');
+      if (!stringifiedSettings) return defaultSettings;
       const parsedSettings = JSON.parse(stringifiedSettings);
       return parsedSettings;
-    } catch (e) {}
-
-    return defaultSettings;
+    } catch (e) {
+      return defaultSettings;
+    }
   });
 
   useEffect(() => {

@@ -1,4 +1,7 @@
-import GameConsole from '@/app/ui/GameConsole/Console';
+import dynamic from 'next/dynamic';
+const GameConsole = dynamic(() => import('@/app/ui/GameConsole/Console'), {
+  ssr: false,
+});
 
 export default function Page() {
   return (
