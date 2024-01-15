@@ -4,29 +4,30 @@ export type Ball = {
   yPos: number;
   dx: number;
   dy: number;
+  fill: string;
+  speed: number;
 };
 
 export type Paddle = {
   xPos: number;
-  // yPos: number;
   width: number;
   height: number;
 };
 
 export type Brick = { status: 0 | 1; x: number; y: number };
 
-type BrickColumn = Brick[];
+export type BrickColumn = Brick[];
 
-export type Bricks = {
+export type BrickInstances = BrickColumn[];
+
+export type BrickConfig = {
   columns: number;
   rows: number;
-  width: number;
   height: number;
   padding: number;
   xOffset: number;
   yOffset: number;
   points: number;
-  instances: BrickColumn[];
 };
 
 export type Canvas = {
