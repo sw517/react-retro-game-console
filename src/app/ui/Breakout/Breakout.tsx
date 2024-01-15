@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Direction } from '@/types/input';
+import { InputValue } from '@/types/input';
+import {
+  getItemFromLocalStorage,
+  setItemInLocalStorage,
+} from '@/app/helpers/local-storage';
 import styles from './styles.module.scss';
 import { type Paddle, Ball, Bricks, Canvas } from '@/types/breakout';
-import { InputValue } from '@/types/input';
 
 const initialCanvas: Canvas = {
   width: 167,
@@ -49,6 +53,9 @@ export default function Breakout({
   const paddle = useRef<Paddle>(initialPaddle);
   const bricks = useRef<Bricks>(initialBricks);
   const score = useRef(0);
+  const highestScore = useRef(0);
+  const level = useRef(1);
+  const highestLevel = useRef(1);
   const gameState = useRef<GameState>('mounting');
   const gamePaused = useRef(false);
   const gameWon = useRef(false);
@@ -265,6 +272,19 @@ export default function Breakout({
         }
       }
       gameState.current = 'ended';
+      if (highestScore.current < score.current) {
+        highestScore.current = score.current;
+
+        if (gameWon.current) {
+          highestLevel.current = level.current = level.current + 1;
+        } else {
+          highestLevel.current = level.current;
+        }
+        setItemInLocalStorage('breakout-record', {
+          highestLevel: highestLevel.current,
+          highestScore: highestScore.current,
+        });
+      }
     };
 
     const checkEndGame = () => {
@@ -309,9 +329,14 @@ export default function Breakout({
 
       ctx.current.translate(0.5, 0.5);
 
-      ctx.current.font = '10px Courier';
+      const fontSize = canvas.current.width < 200 ? 6 : 10;
+      ctx.current.font = `${fontSize}px Courier`;
       ctx.current.fillStyle = canvas.current.color;
-      ctx.current.fillText(`Score: ${score.current}`, 5, 12);
+      ctx.current.fillText(
+        `SCORE: ${score.current}  LVL: ${level.current}  HI-SCORE: ${highestScore.current} (LVL ${highestLevel.current})`,
+        5,
+        12
+      );
 
       ctx.current.translate(-0.5, -0.5);
     };
@@ -322,7 +347,7 @@ export default function Breakout({
       ctx.current.font = '18px Courier';
       ctx.current.fillStyle = canvas.current.color;
       ctx.current.fillText(
-        'Press START',
+        'PRESS START',
         canvas.current.width / 2 - 60,
         canvas.current.height / 2 + 10
       );
@@ -356,7 +381,7 @@ export default function Breakout({
       ctx.current.font = '11px Courier';
       ctx.current.fillStyle = canvas.current.color;
       ctx.current.fillText(
-        '(Press Start to reset)',
+        '(PRESS START TO RESET)',
         canvas.current.width / 2 - 76,
         canvas.current.height / 2 + 30
       );
@@ -380,13 +405,19 @@ export default function Breakout({
     }
   }, [input, soundEnabled]);
 
-  // Set canvas width when component mounts
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
     canvas.current.width = canvasElement.current?.clientWidth || 0;
     canvas.current.height = canvasElement.current?.clientHeight || 0;
     setCanvasPixelWidth(canvas.current.width * dpr.current);
     setCanvasPixelHeight(canvas.current.height * dpr.current);
+
+    const storedUserRecord = getItemFromLocalStorage('breakout-record') || {
+      highestLevel: 1,
+      highestScore: 0,
+    };
+    highestLevel.current = storedUserRecord.highestLevel;
+    highestScore.current = storedUserRecord.highestScore;
 
     const soundtrackAudioNode = soundtrackAudio.current;
     const countdownAudioNode = countdownAudio.current;
