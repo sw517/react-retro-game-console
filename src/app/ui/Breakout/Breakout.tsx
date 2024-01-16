@@ -393,7 +393,7 @@ export default function Breakout({
 
       ctx.current.translate(0.5, 0.5);
 
-      const fontSize = canvas.current.width < 200 ? 6 : 10;
+      const fontSize = canvas.current.width < 200 ? 6 : 8;
       ctx.current.font = `${fontSize}px Courier`;
       ctx.current.textAlign = 'left';
       ctx.current.fillStyle = colorConfig.current.text;
