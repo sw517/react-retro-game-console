@@ -1,4 +1,46 @@
-import { Ball, BrickConfig } from '@/types/breakout';
+import { Ball, BrickConfig, ColorConfig } from '@/types/breakout';
+
+const colorConfigs: ColorConfig[] = [
+  {
+    background: '#333',
+    text: '#ccc',
+    ball: '#ccc',
+    paddle: '#ccc',
+    brick: '#ccc',
+  },
+  {
+    background: '#333',
+    text: '#ccc',
+    ball: '#ccc',
+    paddle: '#ccc',
+    brick: '#b6ae48',
+  },
+  {
+    background: '#333',
+    text: '#ccc',
+    ball: '#ccc',
+    paddle: '#ccc',
+    brick: '#f088ff',
+  },
+  {
+    background: '#333',
+    text: '#ccc',
+    ball: '#ccc',
+    paddle: '#ccc',
+    brick: '#84edd8',
+  },
+  {
+    background: '#ccc',
+    text: '#333',
+    ball: '#333',
+    paddle: '#333',
+    brick: '#333',
+  },
+];
+
+export const getColorConfig = (level = 0): ColorConfig => {
+  return colorConfigs[level] || colorConfigs[0];
+};
 
 const brickConfigs = [
   {
@@ -30,7 +72,7 @@ const brickConfigs = [
 
 export const getBrickConfig = (level = 0): BrickConfig => {
   return {
-    height: 5,
+    height: 6,
     padding: 8,
     xOffset: 12,
     yOffset: 20,
@@ -39,11 +81,11 @@ export const getBrickConfig = (level = 0): BrickConfig => {
 };
 
 const ballConfigs = [
-  { fill: '#ccc', speed: 1 },
-  { fill: '#84edd8', speed: 1.25 },
-  { fill: '#b6ae48', speed: 1.5 },
-  { fill: '#a848b6', speed: 1.75 },
-  { fill: '#59b648', speed: 2 },
+  { speed: 1 },
+  { speed: 1.25 },
+  { speed: 1.5 },
+  { speed: 2 },
+  { speed: 3 },
 ];
 
 export const getBallConfig = (level = 0): Ball => {

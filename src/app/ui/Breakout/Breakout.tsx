@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Direction } from '@/types/input';
 import { InputValue } from '@/types/input';
 import {
@@ -16,16 +16,15 @@ import {
   BrickConfig,
   BrickColumn,
   Brick,
+  ColorConfig,
 } from '@/types/breakout';
-import { getBallConfig, getBrickConfig } from './config';
+import { getBallConfig, getBrickConfig, getColorConfig } from './config';
 
 type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
 
 const initialCanvas: Canvas = {
   width: 167,
   height: 121,
-  color: '#ccc',
-  background: '#333333',
 };
 const initialPaddle: Paddle = { xPos: 0, width: 50, height: 5 };
 
@@ -48,8 +47,9 @@ export default function Breakout({
   const ctx = useRef(canvasElement.current?.getContext('2d'));
   const score = useRef(0);
   const highestScore = useRef(0);
-  const level = useRef(3);
+  const level = useRef(0);
   const highestLevel = useRef(0);
+  const colorConfig = useRef<ColorConfig>(getColorConfig(level.current));
   const ball = useRef<Ball>(getBallConfig(level.current));
   const paddle = useRef<Paddle>(initialPaddle);
   const brickConfig = useRef<BrickConfig>(getBrickConfig(level.current));
@@ -123,6 +123,16 @@ export default function Breakout({
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
     ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
+
+    const drawBackground = () => {
+      if (!ctx.current) return;
+
+      ctx.current.beginPath();
+      ctx.current.rect(0, 0, canvas.current.width, canvas.current.height);
+      ctx.current.fillStyle = colorConfig.current.background;
+      ctx.current.fill();
+      ctx.current.closePath();
+    };
 
     const movePaddle = () => {
       if (gameState.current !== 'active' || gamePaused.current) return;
@@ -202,7 +212,7 @@ export default function Breakout({
         0,
         Math.PI * 2
       );
-      ctx.current.fillStyle = ball.current.fill;
+      ctx.current.fillStyle = colorConfig.current.ball;
       ctx.current.fill();
       ctx.current.closePath();
       const newXPos = gamePaused.current
@@ -227,7 +237,7 @@ export default function Breakout({
         paddle.current.width,
         paddle.current.height
       );
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.paddle;
       ctx.current.fill();
       ctx.current.closePath();
     };
@@ -253,7 +263,7 @@ export default function Breakout({
               getBrickWidth(),
               brickConfig.current.height
             );
-            ctx.current.fillStyle = ball.current.fill; //canvas.current.color;
+            ctx.current.fillStyle = colorConfig.current.brick;
             ctx.current.fill();
             ctx.current.closePath();
           }
@@ -340,7 +350,7 @@ export default function Breakout({
       const fontSize = canvas.current.width < 200 ? 6 : 10;
       ctx.current.font = `${fontSize}px Courier`;
       ctx.current.textAlign = 'left';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.text;
       ctx.current.fillText(
         `SCORE: ${score.current}  LVL: ${level.current + 1}  HI-SCORE: ${
           highestScore.current
@@ -356,7 +366,7 @@ export default function Breakout({
       if (!ctx.current) return;
 
       ctx.current.font = '18px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.text;
       ctx.current.textAlign = 'center';
       ctx.current.fillText(
         'PRESS START',
@@ -369,7 +379,7 @@ export default function Breakout({
       if (!ctx.current) return;
 
       ctx.current.font = '18px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.text;
       ctx.current.textAlign = 'center';
       ctx.current.fillText(
         String(countdown.current),
@@ -383,7 +393,7 @@ export default function Breakout({
 
       ctx.current.textAlign = 'center';
       ctx.current.font = '16px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.text;
       ctx.current.fillText(
         gameWon.current ? `LEVEL ${level.current + 1} COMPLETE` : 'GAME OVER',
         canvas.current.width / 2,
@@ -399,6 +409,7 @@ export default function Breakout({
     };
 
     ctx.current.clearRect(0, 0, canvas.current.width, canvas.current.height);
+    drawBackground();
     movePaddle();
     drawBall();
     drawPaddle();

@@ -4,7 +4,6 @@ export type Ball = {
   yPos: number;
   dx: number;
   dy: number;
-  fill: string;
   speed: number;
 };
 
@@ -33,6 +32,12 @@ export type BrickConfig = {
 export type Canvas = {
   width: number;
   height: number;
-  color: string;
+};
+
+export type ColorConfig = {
+  text: string;
   background: string;
+  ball: string;
+  paddle: string;
+  brick: string;
 };
