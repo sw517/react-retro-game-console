@@ -2,31 +2,37 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Direction } from '@/types/input';
-import styles from './styles.module.scss';
-import { type Paddle, Ball, Bricks, Canvas } from '@/types/breakout';
 import { InputValue } from '@/types/input';
+import {
+  getItemFromLocalStorage,
+  setItemInLocalStorage,
+} from '@/app/helpers/local-storage';
+import styles from './styles.module.scss';
+import {
+  type Paddle,
+  Ball,
+  BrickInstances,
+  Canvas,
+  BrickConfig,
+  BrickColumn,
+  Brick,
+  ColorConfig,
+} from '@/types/breakout';
+import { getBallConfig, getBrickConfig, getColorConfig } from './config';
+
+type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
+type CollisionAxis = 'vertical' | 'horizontal';
+type CollisionDirection = 'left' | 'right' | 'top' | 'bottom';
+type CollisionDirectionObject = {
+  dir: CollisionDirection;
+  val: number;
+};
 
 const initialCanvas: Canvas = {
   width: 167,
   height: 121,
-  color: '#ccc',
-  background: '#333333',
 };
-const initialBall: Ball = { xPos: 0, yPos: 0, dy: 0, dx: 0, diameter: 3 };
-const initialPaddle: Paddle = { xPos: 0, width: 50, height: 5 };
-const initialBricks: Bricks = {
-  columns: 5,
-  rows: 3,
-  width: 20,
-  height: 5,
-  padding: 8,
-  xOffset: 12,
-  yOffset: 20,
-  points: 10,
-  instances: [],
-};
-
-type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
+const initialPaddle: Paddle = { xPos: 0, yPos: 5, width: 50, height: 5 };
 
 export default function Breakout({
   input,
@@ -45,10 +51,15 @@ export default function Breakout({
   );
   const canvasElement = useRef<HTMLCanvasElement | null>(null);
   const ctx = useRef(canvasElement.current?.getContext('2d'));
-  const ball = useRef<Ball>(initialBall);
-  const paddle = useRef<Paddle>(initialPaddle);
-  const bricks = useRef<Bricks>(initialBricks);
   const score = useRef(0);
+  const highestScore = useRef(0);
+  const level = useRef(0);
+  const highestLevel = useRef(0);
+  const colorConfig = useRef<ColorConfig>(getColorConfig(level.current));
+  const ball = useRef<Ball>(getBallConfig(level.current));
+  const paddle = useRef<Paddle>(initialPaddle);
+  const brickConfig = useRef<BrickConfig>(getBrickConfig(level.current));
+  const brickInstances = useRef<BrickInstances>([]);
   const gameState = useRef<GameState>('mounting');
   const gamePaused = useRef(false);
   const gameWon = useRef(false);
@@ -82,22 +93,20 @@ export default function Breakout({
     ball.current.dy = 0;
     ball.current.xPos = canvas.current.width / 2;
     ball.current.yPos =
-      canvas.current.height - paddle.current.height - ball.current.diameter - 2;
+      canvas.current.height -
+      paddle.current.height -
+      paddle.current.yPos -
+      ball.current.diameter -
+      8;
 
     // Init paddle
     paddle.current.xPos = (canvas.current.width - paddle.current.width) / 2;
 
     // Init bricks
-    const brickWidth =
-      (canvas.current.width -
-        bricks.current.xOffset * 2 -
-        bricks.current.padding * 4) /
-      5;
-    bricks.current.width = brickWidth;
-    for (let c = 0; c < bricks.current.columns; c += 1) {
-      bricks.current.instances[c] = [];
-      for (let r = 0; r < bricks.current.rows; r += 1) {
-        bricks.current.instances[c][r] = { x: 0, y: 0, status: 1 };
+    for (let c = 0; c < brickConfig.current.columns; c += 1) {
+      brickInstances.current[c] = [];
+      for (let r = 0; r < brickConfig.current.rows; r += 1) {
+        brickInstances.current[c][r] = { x: 0, y: 0, status: 1 };
       }
     }
   }, []);
@@ -107,11 +116,30 @@ export default function Breakout({
     ball.current.dy = ball.current.dy < 0 ? -speed : speed;
   };
 
+  const getBrickWidth = () => {
+    return (
+      (canvas.current.width -
+        brickConfig.current.xOffset * 2 -
+        brickConfig.current.padding * (brickConfig.current.columns - 1)) /
+      brickConfig.current.columns
+    );
+  };
+
   const draw = useCallback(() => {
     if (!ctx.current) return;
 
     ctx.current.setTransform(1, 0, 0, 1, 0, 0); // Prevent context.scale doubling when reset
     ctx.current.scale(dpr.current, dpr.current); // Scale the drawings to match the dimensions of the canvas
+
+    const drawBackground = () => {
+      if (!ctx.current) return;
+
+      ctx.current.beginPath();
+      ctx.current.rect(0, 0, canvas.current.width, canvas.current.height);
+      ctx.current.fillStyle = colorConfig.current.background;
+      ctx.current.fill();
+      ctx.current.closePath();
+    };
 
     const movePaddle = () => {
       if (gameState.current !== 'active' || gamePaused.current) return;
@@ -148,7 +176,8 @@ export default function Breakout({
         ball.current.yPos >
           canvas.current.height -
             ball.current.diameter -
-            paddle.current.height &&
+            paddle.current.height -
+            paddle.current.yPos &&
         ball.current.yPos < canvas.current.height - ball.current.diameter
       ) {
         // Check if ball is between the sides of the paddle.
@@ -191,7 +220,7 @@ export default function Breakout({
         0,
         Math.PI * 2
       );
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.ball;
       ctx.current.fill();
       ctx.current.closePath();
       const newXPos = gamePaused.current
@@ -211,11 +240,11 @@ export default function Breakout({
       ctx.current.beginPath();
       ctx.current.rect(
         paddle.current.xPos,
-        canvas.current.height - paddle.current.height,
+        canvas.current.height - paddle.current.height - paddle.current.yPos,
         paddle.current.width,
         paddle.current.height
       );
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.paddle;
       ctx.current.fill();
       ctx.current.closePath();
     };
@@ -223,25 +252,25 @@ export default function Breakout({
     const drawBricks = () => {
       if (!ctx.current) return;
 
-      for (let c = 0; c < bricks.current.columns; c += 1) {
-        for (let r = 0; r < bricks.current.rows; r += 1) {
-          if (bricks.current.instances[c][r].status === 1) {
+      for (let c = 0; c < brickConfig.current.columns; c += 1) {
+        for (let r = 0; r < brickConfig.current.rows; r += 1) {
+          if (brickInstances.current[c][r].status === 1) {
             const brickXPos =
-              c * (bricks.current.width + bricks.current.padding) +
-              bricks.current.xOffset;
+              c * (getBrickWidth() + brickConfig.current.padding) +
+              brickConfig.current.xOffset;
             const brickYPos =
-              r * (bricks.current.height + bricks.current.padding) +
-              bricks.current.yOffset;
-            bricks.current.instances[c][r].x = brickXPos;
-            bricks.current.instances[c][r].y = brickYPos;
+              r * (brickConfig.current.height + brickConfig.current.padding) +
+              brickConfig.current.yOffset;
+            brickInstances.current[c][r].x = brickXPos;
+            brickInstances.current[c][r].y = brickYPos;
             ctx.current.beginPath();
             ctx.current.rect(
               brickXPos,
               brickYPos,
-              bricks.current.width,
-              bricks.current.height
+              getBrickWidth(),
+              brickConfig.current.height
             );
-            ctx.current.fillStyle = canvas.current.color;
+            ctx.current.fillStyle = colorConfig.current.brick;
             ctx.current.fill();
             ctx.current.closePath();
           }
@@ -265,34 +294,89 @@ export default function Breakout({
         }
       }
       gameState.current = 'ended';
+      if (highestScore.current < score.current) {
+        highestScore.current = score.current;
+
+        if (gameWon.current) {
+          highestLevel.current = level.current = level.current + 1;
+        } else {
+          highestLevel.current = level.current;
+        }
+        setItemInLocalStorage('breakout-record', {
+          highestLevel: highestLevel.current,
+          highestScore: highestScore.current,
+        });
+      }
     };
 
     const checkEndGame = () => {
       if (
-        score.current ===
-        bricks.current.columns * bricks.current.rows * bricks.current.points
+        !brickInstances.current.some((column: BrickColumn) => {
+          return column.some((brick: Brick) => {
+            return brick.status === 1;
+          });
+        })
       ) {
         setGameOver(true);
       }
     };
 
+    const getBrickCollisionAxis = (brick: Brick): CollisionAxis => {
+      const ballRadius = ball.current.diameter / 2;
+      const left: CollisionDirectionObject = {
+        dir: 'left',
+        val: Math.abs(brick.x - ball.current.xPos - ballRadius),
+      };
+      const right: CollisionDirectionObject = {
+        dir: 'right',
+        val: Math.abs(
+          brick.x + getBrickWidth() - ball.current.xPos + ballRadius
+        ),
+      };
+      const top: CollisionDirectionObject = {
+        dir: 'top',
+        val: Math.abs(brick.y - ball.current.yPos - ballRadius),
+      };
+      const bottom: CollisionDirectionObject = {
+        dir: 'bottom',
+        val: Math.abs(
+          brick.y + brickConfig.current.height - ball.current.yPos + ballRadius
+        ),
+      };
+      const directions: CollisionDirectionObject[] = [left, right, top, bottom];
+      const closestDirection = directions.reduce(
+        (
+          closest: CollisionDirectionObject,
+          current: CollisionDirectionObject
+        ) => (closest.val < current.val ? closest : current),
+        directions[0]
+      );
+      return ['top', 'bottom'].includes(closestDirection.dir)
+        ? 'horizontal'
+        : 'vertical';
+    };
+
     const detectBrickCollision = () => {
-      for (let c = 0; c < bricks.current.columns; c += 1) {
-        for (let r = 0; r < bricks.current.rows; r += 1) {
-          const brick = bricks.current.instances[c][r];
+      for (let c = 0; c < brickConfig.current.columns; c += 1) {
+        for (let r = 0; r < brickConfig.current.rows; r += 1) {
+          const brick = brickInstances.current[c][r];
           if (brick.status === 1) {
             if (
               ball.current.xPos > brick.x - ball.current.diameter &&
               ball.current.xPos <
-                brick.x + bricks.current.width + ball.current.diameter &&
+                brick.x + getBrickWidth() + ball.current.diameter &&
               ball.current.yPos > brick.y - ball.current.diameter &&
               ball.current.yPos <
-                brick.y + bricks.current.height + ball.current.diameter
+                brick.y + brickConfig.current.height + ball.current.diameter
             ) {
-              // const direction = getBrickCollisionDirection(brick);
-              ball.current.dy = -ball.current.dy;
+              const axis = getBrickCollisionAxis(brick);
+              if (axis === 'horizontal') {
+                ball.current.dy = -ball.current.dy;
+              } else {
+                ball.current.dx = -ball.current.dx;
+              }
               brick.status = 0;
-              score.current = score.current + bricks.current.points;
+              score.current = score.current + brickConfig.current.points;
 
               if (soundEnabled) {
                 collisionAudio.current.play();
@@ -309,9 +393,17 @@ export default function Breakout({
 
       ctx.current.translate(0.5, 0.5);
 
-      ctx.current.font = '10px Courier';
-      ctx.current.fillStyle = canvas.current.color;
-      ctx.current.fillText(`Score: ${score.current}`, 5, 12);
+      const fontSize = canvas.current.width < 200 ? 6 : 8;
+      ctx.current.font = `${fontSize}px Courier`;
+      ctx.current.textAlign = 'left';
+      ctx.current.fillStyle = colorConfig.current.text;
+      ctx.current.fillText(
+        `SCORE: ${score.current}  LVL: ${level.current + 1}  HI-SCORE: ${
+          highestScore.current
+        } (LVL ${highestLevel.current + 1})`,
+        5,
+        12
+      );
 
       ctx.current.translate(-0.5, -0.5);
     };
@@ -320,11 +412,12 @@ export default function Breakout({
       if (!ctx.current) return;
 
       ctx.current.font = '18px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.text;
+      ctx.current.textAlign = 'center';
       ctx.current.fillText(
-        'Press START',
-        canvas.current.width / 2 - 60,
-        canvas.current.height / 2 + 10
+        'PRESS START',
+        canvas.current.width / 2,
+        canvas.current.height / 2 + 30
       );
     };
 
@@ -332,10 +425,11 @@ export default function Breakout({
       if (!ctx.current) return;
 
       ctx.current.font = '18px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.fillStyle = colorConfig.current.text;
+      ctx.current.textAlign = 'center';
       ctx.current.fillText(
         String(countdown.current),
-        canvas.current.width / 2 - 5,
+        canvas.current.width / 2,
         canvas.current.height / 2 + 30
       );
     };
@@ -343,26 +437,25 @@ export default function Breakout({
     const drawGameOver = () => {
       if (!ctx.current) return;
 
-      const gameText = gameWon.current ? 'WINNER!' : 'GAME OVER';
-      const textOffset = gameWon.current ? 40 : 50;
-      ctx.current.font = '18px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.textAlign = 'center';
+      ctx.current.font = '16px Courier';
+      ctx.current.fillStyle = colorConfig.current.text;
       ctx.current.fillText(
-        gameText,
-        canvas.current.width / 2 - textOffset,
-        canvas.current.height / 2 + 10
+        gameWon.current ? `LEVEL ${level.current + 1} COMPLETE` : 'GAME OVER',
+        canvas.current.width / 2,
+        canvas.current.height / 2 + 20
       );
 
-      ctx.current.font = '11px Courier';
-      ctx.current.fillStyle = canvas.current.color;
+      ctx.current.font = '10px Courier';
       ctx.current.fillText(
-        '(Press Start to reset)',
-        canvas.current.width / 2 - 76,
-        canvas.current.height / 2 + 30
+        `(PRESS START TO ${gameWon.current ? 'CONTINUE' : 'RESET'})`,
+        canvas.current.width / 2,
+        canvas.current.height / 2 + 35
       );
     };
 
     ctx.current.clearRect(0, 0, canvas.current.width, canvas.current.height);
+    drawBackground();
     movePaddle();
     drawBall();
     drawPaddle();
@@ -380,13 +473,19 @@ export default function Breakout({
     }
   }, [input, soundEnabled]);
 
-  // Set canvas width when component mounts
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
     canvas.current.width = canvasElement.current?.clientWidth || 0;
     canvas.current.height = canvasElement.current?.clientHeight || 0;
     setCanvasPixelWidth(canvas.current.width * dpr.current);
     setCanvasPixelHeight(canvas.current.height * dpr.current);
+
+    const storedUserRecord = getItemFromLocalStorage('breakout-record') || {
+      highestLevel: 1,
+      highestScore: 0,
+    };
+    highestLevel.current = storedUserRecord.highestLevel;
+    highestScore.current = storedUserRecord.highestScore;
 
     const soundtrackAudioNode = soundtrackAudio.current;
     const countdownAudioNode = countdownAudio.current;
@@ -446,7 +545,7 @@ export default function Breakout({
                 window.clearInterval(countdownInterval.current);
 
               gameState.current = 'active';
-              changeBallSpeed(1);
+              changeBallSpeed(getBallConfig(level.current).speed);
             }
           }, 1000);
           break;
@@ -466,14 +565,21 @@ export default function Breakout({
           break;
 
         case 'ended':
+          if (gameWon.current) {
+            level.current = level.current + 1;
+          } else {
+            score.current = 0;
+            level.current = 0;
+          }
           changeBallSpeed(0);
           countdown.current = 3;
           gameState.current = 'ready';
           gameWon.current = false;
-          score.current = 0;
-          ball.current = initialBall;
+          ball.current = getBallConfig(level.current);
           paddle.current = initialPaddle;
-          bricks.current = initialBricks;
+          brickInstances.current = [];
+          brickConfig.current = getBrickConfig(level.current);
+          colorConfig.current = getColorConfig(level.current);
           initGameProperties();
           break;
       }
