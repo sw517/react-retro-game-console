@@ -26,7 +26,7 @@ const initialCanvas: Canvas = {
   width: 167,
   height: 121,
 };
-const initialPaddle: Paddle = { xPos: 0, width: 50, height: 5 };
+const initialPaddle: Paddle = { xPos: 0, yPos: 5, width: 50, height: 5 };
 
 export default function Breakout({
   input,
@@ -88,7 +88,8 @@ export default function Breakout({
     ball.current.xPos = canvas.current.width / 2;
     ball.current.yPos =
       canvas.current.height -
-      paddle.current.height * 2 -
+      paddle.current.height -
+      paddle.current.yPos -
       ball.current.diameter -
       2;
 
@@ -169,7 +170,8 @@ export default function Breakout({
         ball.current.yPos >
           canvas.current.height -
             ball.current.diameter -
-            paddle.current.height &&
+            paddle.current.height -
+            paddle.current.yPos &&
         ball.current.yPos < canvas.current.height - ball.current.diameter
       ) {
         // Check if ball is between the sides of the paddle.
@@ -230,10 +232,9 @@ export default function Breakout({
       if (!ctx.current) return;
 
       ctx.current.beginPath();
-      // TODO: Offset Paddle y-axis and add config for paddle on different levels
       ctx.current.rect(
         paddle.current.xPos,
-        canvas.current.height - paddle.current.height,
+        canvas.current.height - paddle.current.height - paddle.current.yPos,
         paddle.current.width,
         paddle.current.height
       );

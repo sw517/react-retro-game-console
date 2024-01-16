@@ -9,6 +9,7 @@ export type Ball = {
 
 export type Paddle = {
   xPos: number;
+  yPos: number;
   width: number;
   height: number;
 };
