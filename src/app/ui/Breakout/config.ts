@@ -60,12 +60,12 @@ const brickConfigs = [
   },
   {
     columns: 7,
-    rows: 3,
+    rows: 4,
     points: 40,
   },
   {
     columns: 7,
-    rows: 3,
+    rows: 4,
     points: 50,
   },
 ];

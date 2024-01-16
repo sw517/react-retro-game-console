@@ -21,6 +21,12 @@ import {
 import { getBallConfig, getBrickConfig, getColorConfig } from './config';
 
 type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
+type CollisionAxis = 'vertical' | 'horizontal';
+type CollisionDirection = 'left' | 'right' | 'top' | 'bottom';
+type CollisionDirectionObject = {
+  dir: CollisionDirection;
+  val: number;
+};
 
 const initialCanvas: Canvas = {
   width: 167,
@@ -91,7 +97,7 @@ export default function Breakout({
       paddle.current.height -
       paddle.current.yPos -
       ball.current.diameter -
-      2;
+      8;
 
     // Init paddle
     paddle.current.xPos = (canvas.current.width - paddle.current.width) / 2;
@@ -315,6 +321,41 @@ export default function Breakout({
       }
     };
 
+    const getBrickCollisionAxis = (brick: Brick): CollisionAxis => {
+      const ballRadius = ball.current.diameter / 2;
+      const left: CollisionDirectionObject = {
+        dir: 'left',
+        val: Math.abs(brick.x - ball.current.xPos - ballRadius),
+      };
+      const right: CollisionDirectionObject = {
+        dir: 'right',
+        val: Math.abs(
+          brick.x + getBrickWidth() - ball.current.xPos + ballRadius
+        ),
+      };
+      const top: CollisionDirectionObject = {
+        dir: 'top',
+        val: Math.abs(brick.y - ball.current.yPos - ballRadius),
+      };
+      const bottom: CollisionDirectionObject = {
+        dir: 'bottom',
+        val: Math.abs(
+          brick.y + brickConfig.current.height - ball.current.yPos + ballRadius
+        ),
+      };
+      const directions: CollisionDirectionObject[] = [left, right, top, bottom];
+      const closestDirection = directions.reduce(
+        (
+          closest: CollisionDirectionObject,
+          current: CollisionDirectionObject
+        ) => (closest.val < current.val ? closest : current),
+        directions[0]
+      );
+      return ['top', 'bottom'].includes(closestDirection.dir)
+        ? 'horizontal'
+        : 'vertical';
+    };
+
     const detectBrickCollision = () => {
       for (let c = 0; c < brickConfig.current.columns; c += 1) {
         for (let r = 0; r < brickConfig.current.rows; r += 1) {
@@ -328,8 +369,12 @@ export default function Breakout({
               ball.current.yPos <
                 brick.y + brickConfig.current.height + ball.current.diameter
             ) {
-              // const direction = getBrickCollisionDirection(brick);
-              ball.current.dy = -ball.current.dy;
+              const axis = getBrickCollisionAxis(brick);
+              if (axis === 'horizontal') {
+                ball.current.dy = -ball.current.dy;
+              } else {
+                ball.current.dx = -ball.current.dx;
+              }
               brick.status = 0;
               score.current = score.current + brickConfig.current.points;
 
@@ -534,6 +579,7 @@ export default function Breakout({
           paddle.current = initialPaddle;
           brickInstances.current = [];
           brickConfig.current = getBrickConfig(level.current);
+          colorConfig.current = getColorConfig(level.current);
           initGameProperties();
           break;
       }
