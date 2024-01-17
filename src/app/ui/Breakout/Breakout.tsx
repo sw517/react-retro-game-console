@@ -48,7 +48,7 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
   const ctx = useRef(canvasElement.current?.getContext('2d'));
   const score = useRef(0);
   const highestScore = useRef(0);
-  const level = useRef(0);
+  const level = useRef(4);
   const highestLevel = useRef(0);
   const colorConfig = useRef<ColorConfig>(getColorConfig(level.current));
   const ball = useRef<Ball>(getBallConfig(level.current));
@@ -180,19 +180,35 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
           ball.current.xPos > paddle.current.xPos &&
           ball.current.xPos < paddle.current.xPos + paddle.current.width
         ) {
-          // Ensure the ball goes only upwards because the ball
-          // can sometimes overlap the paddle and get caught inside it.
-          ball.current.dy = -Math.abs(ball.current.dy);
-
           // Make ball go left if hits the left side of the paddle, else
-          // make the ball go right.
+          // make the ball go right. On far quarters, ball should have reduced
+          // vertical speed.
           if (
             ball.current.xPos <
             paddle.current.xPos + paddle.current.width / 2
           ) {
             ball.current.dx = -Math.abs(ball.current.dx);
+            if (
+              ball.current.xPos <
+              paddle.current.xPos + paddle.current.width / 4
+            ) {
+              ball.current.dy = -getBallConfig().speed * 0.75;
+              ball.current.dx = -getBallConfig().speed * 1.25;
+            } else {
+              ball.current.dy = -getBallConfig().speed;
+              ball.current.dx = -getBallConfig().speed;
+            }
           } else {
-            ball.current.dx = Math.abs(ball.current.dx);
+            if (
+              ball.current.xPos >
+              paddle.current.xPos + (paddle.current.width / 4) * 3
+            ) {
+              ball.current.dy = -getBallConfig().speed * 0.75;
+              ball.current.dx = getBallConfig().speed * 1.25;
+            } else {
+              ball.current.dy = -getBallConfig().speed;
+              ball.current.dx = getBallConfig().speed;
+            }
           }
         }
         // Check if ball hits bottom of canvas.
