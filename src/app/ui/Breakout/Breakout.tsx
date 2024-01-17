@@ -20,7 +20,7 @@ import {
 } from '@/types/breakout';
 import { getBallConfig, getBrickConfig, getColorConfig } from './config';
 
-type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
+type GameState = 'ready' | 'countdown' | 'active' | 'ended';
 type CollisionAxis = 'vertical' | 'horizontal';
 type CollisionDirection = 'left' | 'right' | 'top' | 'bottom';
 type CollisionDirectionObject = {
@@ -34,13 +34,8 @@ const initialCanvas: Canvas = {
 };
 const initialPaddle: Paddle = { xPos: 0, yPos: 5, width: 50, height: 5 };
 
-export default function Breakout({
-  input,
-  soundEnabled,
-}: {
-  input: InputValue | null;
-  soundEnabled: boolean;
-}) {
+export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
+  const [input, setInput] = useState<InputValue | null>(null);
   const dpr = useRef(1);
   const canvas = useRef<Canvas>(initialCanvas);
   const [canvasPixelWidth, setCanvasPixelWidth] = useState<number>(
@@ -60,7 +55,7 @@ export default function Breakout({
   const paddle = useRef<Paddle>(initialPaddle);
   const brickConfig = useRef<BrickConfig>(getBrickConfig(level.current));
   const brickInstances = useRef<BrickInstances>([]);
-  const gameState = useRef<GameState>('mounting');
+  const gameState = useRef<GameState>('ready');
   const gamePaused = useRef(false);
   const gameWon = useRef(false);
   const countdown = useRef(3);
@@ -462,7 +457,7 @@ export default function Breakout({
     drawBricks();
     detectBrickCollision();
     drawScore();
-    if (['mounting', 'ready'].includes(gameState.current)) {
+    if (['ready'].includes(gameState.current)) {
       drawInstructions();
     }
     if (gameState.current === 'countdown') {
@@ -491,7 +486,6 @@ export default function Breakout({
     const countdownAudioNode = countdownAudio.current;
 
     return () => {
-      gameState.current = 'mounting';
       countdownInterval.current &&
         window.clearInterval(countdownInterval.current);
       if (soundtrackAudioNode) {
@@ -519,72 +513,71 @@ export default function Breakout({
   }, [initGameProperties]);
 
   useEffect(() => {
-    // Prevent countdown triggering when mounting
-    if (gameState.current === 'mounting' && input === Button.B) {
-      gameState.current = 'ready';
-    }
+    const callback = (inputValue: InputValue) => {
+      setInput(inputValue);
 
-    if (input === Button.START) {
-      switch (gameState.current) {
-        case 'mounting':
-          gameState.current = 'ready';
-          break;
+      if (inputValue === Button.START) {
+        switch (gameState.current) {
+          case 'ready':
+            if (soundEnabled) soundtrackAudio.current.play();
+            gameState.current = 'countdown';
 
-        case 'ready':
-          if (soundEnabled) soundtrackAudio.current.play();
-          gameState.current = 'countdown';
+            if (soundEnabled) countdownAudio.current.play();
+            countdownInterval.current &&
+              window.clearInterval(countdownInterval.current);
+            countdownInterval.current = window.setInterval(() => {
+              countdown.current = countdown.current - 1;
 
-          if (soundEnabled) countdownAudio.current.play();
-          countdownInterval.current &&
-            window.clearInterval(countdownInterval.current);
-          countdownInterval.current = window.setInterval(() => {
-            countdown.current = countdown.current - 1;
+              if (countdown.current <= 0) {
+                countdownInterval.current &&
+                  window.clearInterval(countdownInterval.current);
 
-            if (countdown.current <= 0) {
-              countdownInterval.current &&
-                window.clearInterval(countdownInterval.current);
+                gameState.current = 'active';
+                changeBallSpeed(getBallConfig(level.current).speed);
+              }
+            }, 1000);
+            break;
 
-              gameState.current = 'active';
-              changeBallSpeed(getBallConfig(level.current).speed);
+          case 'countdown':
+            break;
+
+          case 'active':
+            gamePaused.current = !gamePaused.current;
+            if (soundEnabled) {
+              if (gamePaused.current) {
+                soundtrackAudio.current.pause();
+              } else {
+                soundtrackAudio.current.play();
+              }
             }
-          }, 1000);
-          break;
+            break;
 
-        case 'countdown':
-          break;
-
-        case 'active':
-          gamePaused.current = !gamePaused.current;
-          if (soundEnabled) {
-            if (gamePaused.current) {
-              soundtrackAudio.current.pause();
+          case 'ended':
+            if (gameWon.current) {
+              level.current = level.current + 1;
             } else {
-              soundtrackAudio.current.play();
+              score.current = 0;
+              level.current = 0;
             }
-          }
-          break;
-
-        case 'ended':
-          if (gameWon.current) {
-            level.current = level.current + 1;
-          } else {
-            score.current = 0;
-            level.current = 0;
-          }
-          changeBallSpeed(0);
-          countdown.current = 3;
-          gameState.current = 'ready';
-          gameWon.current = false;
-          ball.current = getBallConfig(level.current);
-          paddle.current = initialPaddle;
-          brickInstances.current = [];
-          brickConfig.current = getBrickConfig(level.current);
-          colorConfig.current = getColorConfig(level.current);
-          initGameProperties();
-          break;
+            changeBallSpeed(0);
+            countdown.current = 3;
+            gameState.current = 'ready';
+            gameWon.current = false;
+            ball.current = getBallConfig(level.current);
+            paddle.current = initialPaddle;
+            brickInstances.current = [];
+            brickConfig.current = getBrickConfig(level.current);
+            colorConfig.current = getColorConfig(level.current);
+            initGameProperties();
+            break;
+        }
       }
-    }
-  }, [initGameProperties, input, soundEnabled]);
+    };
+    window.emitter.on('input', callback);
+    return () => {
+      window.emitter.off('input', callback);
+    };
+  }, [initGameProperties, soundEnabled]);
 
   return (
     <canvas

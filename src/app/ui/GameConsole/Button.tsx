@@ -1,4 +1,11 @@
-import { TouchEvent, MouseEvent, useState, useContext } from 'react';
+import {
+  TouchEvent,
+  MouseEvent,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
 import { SettingsContext } from '@/app/contexts/SettingsContext';
 import { SettingsKeys } from '@/types/settings';
 import styles from '@/app/ui/GameConsole/styles.module.scss';
@@ -8,13 +15,13 @@ import { Button as ButtonType } from '@/types/input';
 
 export default function Button({
   value,
+  keyboardCode,
   className,
-  onPress,
   type = 'round',
   dataTestId = 'round-button',
 }: {
-  onPress: (arg0: ButtonType | null) => void;
   value: ButtonType;
+  keyboardCode: KeyboardEvent['code'] | KeyboardEvent['code'][];
   className?: string;
   type?: 'round' | 'flat';
   dataTestId?: string;
@@ -23,31 +30,64 @@ export default function Button({
   const { vibrate } = useNavigator();
   const [pressed, setPressed] = useState(false);
 
-  const handlePress = (
+  const handleButtonPress = useCallback(
+    (pressed: boolean) => {
+      setPressed(pressed);
+      window.emitter.emit('input', pressed ? value : null);
+      if (pressed && settings[SettingsKeys.VIBRATION_ENABLED]) {
+        vibrate();
+      }
+    },
+    [settings, vibrate, value]
+  );
+
+  const onButtonPress = (
     e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
-    if (settings[SettingsKeys.VIBRATION_ENABLED]) {
-      vibrate();
-    }
-    setPressed(true);
-    onPress(value);
+    handleButtonPress(true);
   };
-  const handleRelease = (
+  const onButtonRelease = (
     e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
-    setPressed(false);
-    onPress(null);
+    handleButtonPress(false);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+
+      if (
+        (typeof keyboardCode === 'string' && keyboardCode === e.code) ||
+        keyboardCode.includes(e.code)
+      ) {
+        handleButtonPress(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === keyboardCode) {
+        handleButtonPress(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleButtonPress, keyboardCode]);
 
   if (type === 'round') {
     return (
       <button
-        onTouchStart={handlePress}
-        onTouchEnd={handleRelease}
-        onMouseDown={handlePress}
-        onMouseUp={handleRelease}
+        onTouchStart={onButtonPress}
+        onTouchEnd={onButtonRelease}
+        onMouseDown={onButtonPress}
+        onMouseUp={onButtonRelease}
         className={clsx([
           className,
           styles['round-button'],
@@ -62,10 +102,10 @@ export default function Button({
     return (
       <div className={clsx([className, 'inline-block text-center'])}>
         <button
-          onTouchStart={handlePress}
-          onTouchEnd={handleRelease}
-          onMouseDown={handlePress}
-          onMouseUp={handleRelease}
+          onTouchStart={onButtonPress}
+          onTouchEnd={onButtonRelease}
+          onMouseDown={onButtonPress}
+          onMouseUp={onButtonRelease}
           className={clsx([
             styles['flat-button'],
             pressed && styles['flat-button--pressed'],

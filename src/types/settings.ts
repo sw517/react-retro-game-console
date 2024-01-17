@@ -25,3 +25,9 @@ export type SettingsItem = {
   children?: SettingsItem[];
   type?: SettingsType;
 };
+
+export type SettingsContextType = {
+  [SettingsKeys.VIBRATION_ENABLED]: boolean;
+  [SettingsKeys.SOUND_ENABLED]: boolean;
+  [SettingsKeys.COLOR]: ConsoleColors;
+};

@@ -9,7 +9,7 @@ $screen-background-color: #222;
   aspect-ratio: 307/526;
   width: 100%;
   max-height: 100dvh;
-  max-width: 400px;
+  max-width: 330px;
   padding: 1.5rem;
   background-color: rgb(183, 66, 66);
   border-top-left-radius: 20px;
@@ -19,6 +19,10 @@ $screen-background-color: #222;
   border: 5px solid rgba(0, 0, 0, 0.3);
   box-shadow: $button-box-shadow--reflection;
   user-select: none;
+
+  @media screen and (min-width: 460px) {
+    max-width: 400px;
+  }
 
   &--red {
     background-color: rgb(183, 66, 66);
