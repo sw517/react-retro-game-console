@@ -48,7 +48,7 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
   const ctx = useRef(canvasElement.current?.getContext('2d'));
   const score = useRef(0);
   const highestScore = useRef(0);
-  const level = useRef(4);
+  const level = useRef(0);
   const highestLevel = useRef(0);
   const colorConfig = useRef<ColorConfig>(getColorConfig(level.current));
   const ball = useRef<Ball>(getBallConfig(level.current));
