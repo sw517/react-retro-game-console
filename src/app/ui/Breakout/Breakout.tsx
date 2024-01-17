@@ -35,7 +35,7 @@ const initialCanvas: Canvas = {
 const initialPaddle: Paddle = { xPos: 0, yPos: 5, width: 50, height: 5 };
 
 export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
-  const [input, setInput] = useState<InputValue | null>(null);
+  const input = useRef<InputValue | null>(null);
   const dpr = useRef(1);
   const canvas = useRef<Canvas>(initialCanvas);
   const [canvasPixelWidth, setCanvasPixelWidth] = useState<number>(
@@ -139,11 +139,11 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
     const movePaddle = () => {
       if (gameState.current !== 'active' || gamePaused.current) return;
 
-      if (input === Direction.RIGHT) {
+      if (input.current === Direction.RIGHT) {
         if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
           paddle.current.xPos += 3;
         }
-      } else if (input === Direction.LEFT) {
+      } else if (input.current === Direction.LEFT) {
         if (paddle.current.xPos >= 0) {
           paddle.current.xPos -= 3;
         }
@@ -388,7 +388,8 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
 
       ctx.current.translate(0.5, 0.5);
 
-      const fontSize = canvas.current.width < 200 ? 6 : 9;
+      const width = canvas.current.width;
+      const fontSize = width < 200 ? 6 : width < 250 ? 7 : 8;
       ctx.current.font = `${fontSize}px Courier`;
       ctx.current.textAlign = 'left';
       ctx.current.fillStyle = colorConfig.current.text;
@@ -457,7 +458,7 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
     drawBricks();
     detectBrickCollision();
     drawScore();
-    if (['ready'].includes(gameState.current)) {
+    if (gameState.current === 'ready') {
       drawInstructions();
     }
     if (gameState.current === 'countdown') {
@@ -466,7 +467,7 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
     if (gameState.current === 'ended') {
       drawGameOver();
     }
-  }, [input, soundEnabled]);
+  }, [soundEnabled]);
 
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
@@ -514,9 +515,9 @@ export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
 
   useEffect(() => {
     const callback = (inputValue: InputValue) => {
-      setInput(inputValue);
+      input.current = inputValue;
 
-      if (inputValue === Button.START) {
+      if (input.current === Button.START) {
         switch (gameState.current) {
           case 'ready':
             if (soundEnabled) soundtrackAudio.current.play();
