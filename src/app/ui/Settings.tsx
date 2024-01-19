@@ -1,22 +1,34 @@
 'use client';
 
 import clsx from 'clsx';
-import { SettingsItem as SettingsItemType } from '@/types/settings';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  SettingsItem as SettingsItemType,
+  SettingsKeys,
+  ConsoleColors,
+  SettingsType,
+  SettingsContextType,
+} from '@/types/settings';
+import { Button, Direction } from '@/types/input';
 import SettingsItem from './SettingsItem';
 import styles from '@/app/ui/styles.module.scss';
 import useResponsive from '@/app/hooks/useResponsive';
-import { useState, useEffect } from 'react';
+import { InputValue } from '@/types/input';
 
 export default function Settings({
-  selectedIndex,
-  settingsItems,
+  settings,
+  onUpdate,
+  onClose,
 }: {
-  selectedIndex: number;
-  selectedParentId: SettingsItemType['id'] | null;
-  settingsItems: SettingsItemType[];
+  settings: SettingsContextType;
+  onUpdate: (arg0: any) => void;
+  onClose: () => void;
 }) {
   const { width: windowWidth } = useResponsive();
-
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedParentId, setSelectedParentId] = useState<
+    SettingsItemType['id'] | null
+  >(null);
   const [pageCount, setPageCount] = useState(3);
 
   useEffect(() => {
@@ -27,7 +39,88 @@ export default function Settings({
     }
   }, [windowWidth]);
 
-  const items = settingsItems.map((item, i) => (
+  const allSettingsItems: SettingsItemType[] = useMemo(
+    () => [
+      {
+        id: SettingsKeys.VIBRATION_ENABLED,
+        type: SettingsType.TOGGLE,
+        text: 'Vibration',
+        key: SettingsKeys.VIBRATION_ENABLED,
+        value: settings[SettingsKeys.VIBRATION_ENABLED],
+      },
+      {
+        id: SettingsKeys.SOUND_ENABLED,
+        type: SettingsType.TOGGLE,
+        text: 'Sound',
+        key: SettingsKeys.SOUND_ENABLED,
+        value: settings[SettingsKeys.SOUND_ENABLED],
+      },
+      {
+        id: SettingsKeys.COLOR,
+        text: 'Console appearance',
+        children: [
+          {
+            id: ConsoleColors.RED,
+            type: SettingsType.SELECT,
+            text: 'Red',
+            key: SettingsKeys.COLOR,
+            value: ConsoleColors.RED,
+          },
+          {
+            id: ConsoleColors.PURPLE,
+            type: SettingsType.SELECT,
+            text: 'Purple',
+            key: SettingsKeys.COLOR,
+            value: ConsoleColors.PURPLE,
+          },
+          {
+            id: ConsoleColors.YELLOW,
+            type: SettingsType.SELECT,
+            text: 'Yellow',
+            key: SettingsKeys.COLOR,
+            value: ConsoleColors.YELLOW,
+          },
+          {
+            id: ConsoleColors.GREEN,
+            type: SettingsType.SELECT,
+            text: 'Green',
+            key: SettingsKeys.COLOR,
+            value: ConsoleColors.GREEN,
+          },
+          {
+            id: ConsoleColors.TURQOISE,
+            type: SettingsType.SELECT,
+            text: 'Turqoise',
+            key: SettingsKeys.COLOR,
+            value: ConsoleColors.TURQOISE,
+          },
+        ],
+      },
+    ],
+    [settings]
+  );
+
+  const getCurrentPageItems = () => {
+    if (!selectedParentId) return allSettingsItems;
+    const items = allSettingsItems.find(
+      ({ id }) => id === selectedParentId
+    )?.children;
+    return items || allSettingsItems;
+  };
+
+  const currentPageItems = getCurrentPageItems();
+
+  const pages = Math.ceil(currentPageItems.length / pageCount);
+  const currentPage = Math.ceil((selectedIndex + 1) / pageCount);
+  const hasPagesBefore = currentPage > 1;
+  const hasPagesAfter = currentPage < pages;
+  const startingPageIndex = (currentPage - 1) * pageCount;
+  const itemsPaginated = currentPageItems.slice(
+    startingPageIndex,
+    startingPageIndex + pageCount
+  );
+
+  const itemElements = itemsPaginated.map((item, i) => (
     <SettingsItem
       key={item.id}
       settingsKey={item.key}
@@ -39,15 +132,68 @@ export default function Settings({
     />
   ));
 
-  const pages = Math.ceil(items.length / pageCount);
-  const currentPage = Math.ceil((selectedIndex + 1) / pageCount);
-  const hasPagesBefore = currentPage > 1;
-  const hasPagesAfter = currentPage < pages;
-  const startingPageIndex = (currentPage - 1) * pageCount;
-  const itemsPaginated = items.slice(
-    startingPageIndex,
-    startingPageIndex + pageCount
-  );
+  useEffect(() => {
+    const callback = (input: InputValue) => {
+      switch (input) {
+        case Direction.DOWN:
+          if (selectedIndex < currentPageItems.length - 1) {
+            setSelectedIndex((i) => i + 1);
+          }
+          break;
+        case Direction.UP:
+          if (selectedIndex > 0) {
+            setSelectedIndex((i) => i - 1);
+          }
+          break;
+        case Button.A:
+          const item = currentPageItems[selectedIndex];
+          if (item.key) {
+            switch (item.key) {
+              case SettingsKeys.SOUND_ENABLED:
+              case SettingsKeys.VIBRATION_ENABLED:
+                onUpdate({
+                  ...settings,
+                  [item.key]: !item.value,
+                });
+                break;
+              case SettingsKeys.COLOR:
+                onUpdate({
+                  ...settings,
+                  [item.key]: item.value as ConsoleColors,
+                });
+            }
+          } else if (item.children) {
+            setSelectedIndex(0);
+            setSelectedParentId(item.id);
+          }
+          break;
+        case Button.B:
+          if (selectedParentId) {
+            const index = allSettingsItems.findIndex(
+              ({ id }) => id === selectedParentId
+            );
+            setSelectedIndex(index === -1 ? 0 : index);
+          } else {
+            setSelectedIndex(0);
+            onClose();
+          }
+          setSelectedParentId(null);
+          break;
+      }
+    };
+    window.emitter.on('input', callback);
+    return () => {
+      window.emitter.off('input', callback);
+    };
+  }, [
+    allSettingsItems,
+    currentPageItems,
+    onClose,
+    onUpdate,
+    selectedIndex,
+    selectedParentId,
+    settings,
+  ]);
 
   return (
     <div
@@ -56,7 +202,7 @@ export default function Settings({
         'flex flex-col bg-neutral-300 text-gray-700 w-full h-full font-bold',
       ])}
     >
-      <ul>{itemsPaginated}</ul>
+      <ul>{itemElements}</ul>
 
       <div className="flex-grow relative">
         {pages > 1 && (

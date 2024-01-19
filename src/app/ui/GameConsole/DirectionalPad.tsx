@@ -1,6 +1,13 @@
 'use client';
 
-import { MouseEvent, TouchEvent, useContext, useState } from 'react';
+import {
+  MouseEvent,
+  TouchEvent,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import { SettingsContext } from '@/app/contexts/SettingsContext';
 import { SettingsKeys } from '@/types/settings';
 import { Direction } from '@/types/input';
@@ -10,10 +17,8 @@ import styles from '@/app/ui/GameConsole/styles.module.scss';
 import DirectionalPadImage from './DirectionalPadImage';
 
 export default function DirectionalPad({
-  onPress,
   dataTestId,
 }: {
-  onPress: (arg0: Direction | null) => void;
   dataTestId?: string;
 }) {
   const settings = useContext(SettingsContext);
@@ -21,6 +26,15 @@ export default function DirectionalPad({
 
   const [directionPressed, setDirectionPressed] = useState<Direction | null>(
     null
+  );
+
+  const handleDirectionPressed = useCallback(
+    (direction: Direction | null) => {
+      setDirectionPressed(direction);
+      window.emitter.emit('input', direction);
+      if (direction && settings[SettingsKeys.VIBRATION_ENABLED]) vibrate();
+    },
+    [settings, vibrate]
   );
 
   const calculatePressDirection = (
@@ -59,42 +73,36 @@ export default function DirectionalPad({
     }
   };
 
-  const handlePress = (
+  const onDirectionPress = (
     e: TouchEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const direction = calculatePressDirection(e) || null;
-    setDirectionPressed(direction);
-    onPress(direction);
-    if (settings[SettingsKeys.VIBRATION_ENABLED]) vibrate();
+    handleDirectionPressed(direction);
   };
 
-  const handleTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
+  const onTouchMove = (e: TouchEvent<HTMLButtonElement>) => {
     e.preventDefault();
     const direction = calculatePressDirection(e) || null;
     if (direction === directionPressed) return;
 
-    setDirectionPressed(direction);
-    onPress(direction);
-    if (settings[SettingsKeys.VIBRATION_ENABLED]) vibrate();
+    handleDirectionPressed(direction);
   };
 
-  const handleRelease = (
+  const onDirectionRelease = (
     e: TouchEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
-    setDirectionPressed(null);
-    onPress(null);
+    handleDirectionPressed(null);
   };
 
-  const handleMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
+  const onMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (e.buttons) {
       const direction = calculatePressDirection(e) || null;
       if (direction === directionPressed) return;
 
-      setDirectionPressed(direction);
-      onPress(direction);
+      handleDirectionPressed(direction);
     }
   };
 
@@ -102,14 +110,77 @@ export default function DirectionalPad({
     e.preventDefault();
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+
+      switch (e.code) {
+        case 'ArrowLeft':
+        case 'KeyA':
+          handleDirectionPressed(Direction.LEFT);
+          break;
+        case 'ArrowRight':
+        case 'KeyD':
+          handleDirectionPressed(Direction.RIGHT);
+          break;
+        case 'ArrowUp':
+        case 'KeyW':
+          handleDirectionPressed(Direction.UP);
+          break;
+        case 'ArrowDown':
+        case 'KeyS':
+          handleDirectionPressed(Direction.DOWN);
+          break;
+        default:
+          break;
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      let directionReleased;
+      switch (e.code) {
+        case 'ArrowLeft':
+        case 'KeyA':
+          directionReleased = Direction.LEFT;
+          break;
+        case 'ArrowRight':
+        case 'KeyD':
+          directionReleased = Direction.RIGHT;
+          break;
+        case 'ArrowUp':
+        case 'KeyW':
+          directionReleased = Direction.UP;
+          break;
+        case 'ArrowDown':
+        case 'KeyS':
+          directionReleased = Direction.DOWN;
+          break;
+        default:
+          break;
+      }
+
+      if (directionReleased === directionPressed) {
+        handleDirectionPressed(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleDirectionPressed, directionPressed]);
+
   return (
     <button
-      onMouseDown={handlePress}
-      onMouseUp={handleRelease}
-      onMouseMove={handleMouseMove}
-      onTouchStart={handlePress}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleRelease}
+      onMouseDown={onDirectionPress}
+      onMouseUp={onDirectionRelease}
+      onMouseMove={onMouseMove}
+      onTouchStart={onDirectionPress}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onDirectionRelease}
       onContextMenu={handleContextMenu}
       className={styles['d-pad']}
       data-testid={dataTestId}

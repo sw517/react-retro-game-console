@@ -20,7 +20,7 @@ import {
 } from '@/types/breakout';
 import { getBallConfig, getBrickConfig, getColorConfig } from './config';
 
-type GameState = 'mounting' | 'ready' | 'countdown' | 'active' | 'ended';
+type GameState = 'ready' | 'countdown' | 'active' | 'ended';
 type CollisionAxis = 'vertical' | 'horizontal';
 type CollisionDirection = 'left' | 'right' | 'top' | 'bottom';
 type CollisionDirectionObject = {
@@ -34,13 +34,8 @@ const initialCanvas: Canvas = {
 };
 const initialPaddle: Paddle = { xPos: 0, yPos: 5, width: 50, height: 5 };
 
-export default function Breakout({
-  input,
-  soundEnabled,
-}: {
-  input: InputValue | null;
-  soundEnabled: boolean;
-}) {
+export default function Breakout({ soundEnabled }: { soundEnabled: boolean }) {
+  const input = useRef<InputValue | null>(null);
   const dpr = useRef(1);
   const canvas = useRef<Canvas>(initialCanvas);
   const [canvasPixelWidth, setCanvasPixelWidth] = useState<number>(
@@ -60,7 +55,7 @@ export default function Breakout({
   const paddle = useRef<Paddle>(initialPaddle);
   const brickConfig = useRef<BrickConfig>(getBrickConfig(level.current));
   const brickInstances = useRef<BrickInstances>([]);
-  const gameState = useRef<GameState>('mounting');
+  const gameState = useRef<GameState>('ready');
   const gamePaused = useRef(false);
   const gameWon = useRef(false);
   const countdown = useRef(3);
@@ -144,11 +139,11 @@ export default function Breakout({
     const movePaddle = () => {
       if (gameState.current !== 'active' || gamePaused.current) return;
 
-      if (input === Direction.RIGHT) {
+      if (input.current === Direction.RIGHT) {
         if (paddle.current.xPos + paddle.current.width < canvas.current.width) {
           paddle.current.xPos += 3;
         }
-      } else if (input === Direction.LEFT) {
+      } else if (input.current === Direction.LEFT) {
         if (paddle.current.xPos >= 0) {
           paddle.current.xPos -= 3;
         }
@@ -185,19 +180,35 @@ export default function Breakout({
           ball.current.xPos > paddle.current.xPos &&
           ball.current.xPos < paddle.current.xPos + paddle.current.width
         ) {
-          // Ensure the ball goes only upwards because the ball
-          // can sometimes overlap the paddle and get caught inside it.
-          ball.current.dy = -Math.abs(ball.current.dy);
-
           // Make ball go left if hits the left side of the paddle, else
-          // make the ball go right.
+          // make the ball go right. On far quarters, ball should have reduced
+          // vertical speed.
           if (
             ball.current.xPos <
             paddle.current.xPos + paddle.current.width / 2
           ) {
             ball.current.dx = -Math.abs(ball.current.dx);
+            if (
+              ball.current.xPos <
+              paddle.current.xPos + paddle.current.width / 4
+            ) {
+              ball.current.dy = -getBallConfig().speed * 0.75;
+              ball.current.dx = -getBallConfig().speed * 1.25;
+            } else {
+              ball.current.dy = -getBallConfig().speed;
+              ball.current.dx = -getBallConfig().speed;
+            }
           } else {
-            ball.current.dx = Math.abs(ball.current.dx);
+            if (
+              ball.current.xPos >
+              paddle.current.xPos + (paddle.current.width / 4) * 3
+            ) {
+              ball.current.dy = -getBallConfig().speed * 0.75;
+              ball.current.dx = getBallConfig().speed * 1.25;
+            } else {
+              ball.current.dy = -getBallConfig().speed;
+              ball.current.dx = getBallConfig().speed;
+            }
           }
         }
         // Check if ball hits bottom of canvas.
@@ -393,7 +404,8 @@ export default function Breakout({
 
       ctx.current.translate(0.5, 0.5);
 
-      const fontSize = canvas.current.width < 200 ? 6 : 8;
+      const width = canvas.current.width;
+      const fontSize = width < 200 ? 6 : width < 250 ? 7 : 8;
       ctx.current.font = `${fontSize}px Courier`;
       ctx.current.textAlign = 'left';
       ctx.current.fillStyle = colorConfig.current.text;
@@ -462,7 +474,7 @@ export default function Breakout({
     drawBricks();
     detectBrickCollision();
     drawScore();
-    if (['mounting', 'ready'].includes(gameState.current)) {
+    if (gameState.current === 'ready') {
       drawInstructions();
     }
     if (gameState.current === 'countdown') {
@@ -471,7 +483,7 @@ export default function Breakout({
     if (gameState.current === 'ended') {
       drawGameOver();
     }
-  }, [input, soundEnabled]);
+  }, [soundEnabled]);
 
   useEffect(() => {
     dpr.current = window.devicePixelRatio || 1;
@@ -491,7 +503,6 @@ export default function Breakout({
     const countdownAudioNode = countdownAudio.current;
 
     return () => {
-      gameState.current = 'mounting';
       countdownInterval.current &&
         window.clearInterval(countdownInterval.current);
       if (soundtrackAudioNode) {
@@ -519,72 +530,71 @@ export default function Breakout({
   }, [initGameProperties]);
 
   useEffect(() => {
-    // Prevent countdown triggering when mounting
-    if (gameState.current === 'mounting' && input === Button.B) {
-      gameState.current = 'ready';
-    }
+    const callback = (inputValue: InputValue) => {
+      input.current = inputValue;
 
-    if (input === Button.START) {
-      switch (gameState.current) {
-        case 'mounting':
-          gameState.current = 'ready';
-          break;
+      if (input.current === Button.START) {
+        switch (gameState.current) {
+          case 'ready':
+            if (soundEnabled) soundtrackAudio.current.play();
+            gameState.current = 'countdown';
 
-        case 'ready':
-          if (soundEnabled) soundtrackAudio.current.play();
-          gameState.current = 'countdown';
+            if (soundEnabled) countdownAudio.current.play();
+            countdownInterval.current &&
+              window.clearInterval(countdownInterval.current);
+            countdownInterval.current = window.setInterval(() => {
+              countdown.current = countdown.current - 1;
 
-          if (soundEnabled) countdownAudio.current.play();
-          countdownInterval.current &&
-            window.clearInterval(countdownInterval.current);
-          countdownInterval.current = window.setInterval(() => {
-            countdown.current = countdown.current - 1;
+              if (countdown.current <= 0) {
+                countdownInterval.current &&
+                  window.clearInterval(countdownInterval.current);
 
-            if (countdown.current <= 0) {
-              countdownInterval.current &&
-                window.clearInterval(countdownInterval.current);
+                gameState.current = 'active';
+                changeBallSpeed(getBallConfig(level.current).speed);
+              }
+            }, 1000);
+            break;
 
-              gameState.current = 'active';
-              changeBallSpeed(getBallConfig(level.current).speed);
+          case 'countdown':
+            break;
+
+          case 'active':
+            gamePaused.current = !gamePaused.current;
+            if (soundEnabled) {
+              if (gamePaused.current) {
+                soundtrackAudio.current.pause();
+              } else {
+                soundtrackAudio.current.play();
+              }
             }
-          }, 1000);
-          break;
+            break;
 
-        case 'countdown':
-          break;
-
-        case 'active':
-          gamePaused.current = !gamePaused.current;
-          if (soundEnabled) {
-            if (gamePaused.current) {
-              soundtrackAudio.current.pause();
+          case 'ended':
+            if (gameWon.current) {
+              level.current = level.current + 1;
             } else {
-              soundtrackAudio.current.play();
+              score.current = 0;
+              level.current = 0;
             }
-          }
-          break;
-
-        case 'ended':
-          if (gameWon.current) {
-            level.current = level.current + 1;
-          } else {
-            score.current = 0;
-            level.current = 0;
-          }
-          changeBallSpeed(0);
-          countdown.current = 3;
-          gameState.current = 'ready';
-          gameWon.current = false;
-          ball.current = getBallConfig(level.current);
-          paddle.current = initialPaddle;
-          brickInstances.current = [];
-          brickConfig.current = getBrickConfig(level.current);
-          colorConfig.current = getColorConfig(level.current);
-          initGameProperties();
-          break;
+            changeBallSpeed(0);
+            countdown.current = 3;
+            gameState.current = 'ready';
+            gameWon.current = false;
+            ball.current = getBallConfig(level.current);
+            paddle.current = initialPaddle;
+            brickInstances.current = [];
+            brickConfig.current = getBrickConfig(level.current);
+            colorConfig.current = getColorConfig(level.current);
+            initGameProperties();
+            break;
+        }
       }
-    }
-  }, [initGameProperties, input, soundEnabled]);
+    };
+    window.emitter.on('input', callback);
+    return () => {
+      window.emitter.off('input', callback);
+    };
+  }, [initGameProperties, soundEnabled]);
 
   return (
     <canvas
